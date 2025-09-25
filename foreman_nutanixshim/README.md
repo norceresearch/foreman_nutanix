@@ -1,4 +1,4 @@
-# ForemanPluginTemplate
+# ForemanNutanixshim
 
 *Introdction here*
 

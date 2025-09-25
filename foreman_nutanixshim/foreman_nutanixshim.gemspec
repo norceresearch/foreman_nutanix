@@ -2,7 +2,7 @@ require File.expand_path('lib/foreman_nutanixshim/version', __dir__)
 
 Gem::Specification.new do |s|
   s.name        = 'foreman_nutanixshim'
-  s.version     = ForemanPluginTemplate::VERSION
+  s.version     = ForemanNutanixshim::VERSION
   s.metadata    = { 'is_foreman_plugin' => 'true' }
   s.license     = 'GPL-3.0'
   s.authors     = ['Miles Granger']

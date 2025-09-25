@@ -38,8 +38,8 @@ Find.find('.') do |path|
   # Change content on all files
   tmp_file = "#{path}.tmp"
   system(%(sed 's/foreman_plugin_template/#{snake}/g' #{path} > #{tmp_file}))
-  system(%(sed 's/ForemanPluginTemplate/#{camel}/g' #{tmp_file} > #{path}))
-  system(%(sed 's/foremanPluginTemplate/#{camel_lower}/g' #{tmp_file} > #{path}))
+  system(%(sed 's/ForemanNutanixshim/#{camel}/g' #{tmp_file} > #{path}))
+  system(%(sed 's/foremanNutanixshim/#{camel_lower}/g' #{tmp_file} > #{path}))
   system(%(rm #{tmp_file}))
 end
 

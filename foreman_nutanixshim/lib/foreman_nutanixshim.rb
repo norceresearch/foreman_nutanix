@@ -1,4 +1,4 @@
 require 'foreman_nutanixshim/engine'
 
-module ForemanPluginTemplate
+module ForemanNutanixshim
 end

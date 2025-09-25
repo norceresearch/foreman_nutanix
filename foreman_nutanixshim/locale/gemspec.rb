@@ -1,2 +1,2 @@
 # Matches foreman_nutanixshim.gemspec
-_('TODO: Description of ForemanPluginTemplate.')
+_('TODO: Description of ForemanNutanixshim.')
