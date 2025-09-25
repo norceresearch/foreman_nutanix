@@ -1,7 +1,19 @@
 module ForemanNutanixshim
+
+  # Struct for selected cluster
+  NutanixCluster = Struct.new(:id, :name)
+
   class Nutanix < ComputeResource
 
-    alias_attribute :endpoint, :url
+    attr_accessor :endpoint, :cluster
+
+    # TODO: Impl discovering available clusters from django app
+    def available_clusters
+      [
+        NutanixCluster.new("a", "Cluster A"),
+        NutanixCluster.new("b", "Cluster B")
+      ]
+    end
 
     def self.provider_friendly_name
       "Nutanix"

@@ -1,1 +1,2 @@
 <%= text_f f, :endpoint, :label => _("Nutanix Cluster"), :required => true %>
+<%= select_f f, :cluster,  @compute_resource.available_clusters, :id, :name %>
