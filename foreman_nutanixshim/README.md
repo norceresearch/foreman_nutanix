@@ -1,6 +1,9 @@
 # ForemanNutanixshim
 
-*Introdction here*
+Initial Nutanix support for Foreman.
+
+First attempt will likely include offloading actual provisioning to the Django app so we can
+make use of the official Nutanix Python SDK rather than doing all that logic in Ruby.
 
 ## Installation
 
@@ -9,19 +12,34 @@ for how to install Foreman plugins
 
 ## Usage
 
-*Usage here*
+Add to foreman by adding the following to the Gemfile:
+
+```
+gem 'foreman_nutanixshim', path: '../foreman-norce/plugins/foreman_nutanixshim'
+```
 
 ## TODO
 
-*Todo list here*
+- [x] Basic rendering of 'Nutanix' compute resource
+- [] Configure the Nutanix shim / Django server endpoint
+- [] Dynamic listing of available Nutanix clusters from Django app
+- [] Successfully provision something...
 
 ## Contributing
 
 Fork and send a Pull Request. Thanks!
 
+### Helpful links
+
+Reference implementation that's helpful:
+- Kubevirt
+  - https://github.com/theforeman/foreman_kubevirt
+  - [kubevirt.rb model](https://github.com/theforeman/foreman_kubevirt/blob/master/app/models/foreman_kubevirt/kubevirt.rb)
+  - [engine.rb](https://github.com/theforeman/foreman_kubevirt/blob/master/lib/foreman_kubevirt/engine.rb)
+
 ## Copyright
 
-Copyright (c) *year* *your name*
+Copyright (c) 2025 NORCE Research
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
