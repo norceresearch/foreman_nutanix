@@ -1,4 +1,4 @@
-module ForemanPluginTemplate
+module ForemanNutanixshim
   module HostExtensions
     extend ActiveSupport::Concern
 
