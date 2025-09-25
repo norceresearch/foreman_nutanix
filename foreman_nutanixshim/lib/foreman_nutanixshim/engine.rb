@@ -16,7 +16,7 @@ module ForemanNutanixshim
           requires_foreman '>= 3.14.0'
           register_gettext
 
-          # compute_resource ForemanNutanixshim::Nutanix
+          compute_resource ForemanNutanixshim::Nutanix
 
           # Add Global files for extending foreman-core components and routes
           register_global_js_file 'global'
