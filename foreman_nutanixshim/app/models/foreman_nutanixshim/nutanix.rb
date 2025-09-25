@@ -1,7 +1,12 @@
 module ForemanNutanixshim
   class Nutanix < ComputeResource
 
-    # Display name in the UI
+    alias_attribute :endpoint, :url
+
+    def self.provider_friendly_name
+      "Nutanix"
+    end
+
     def self.model_name
       ActiveModel::Name.new(self, nil, "Nutanix")
     end

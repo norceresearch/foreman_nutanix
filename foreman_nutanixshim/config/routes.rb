@@ -6,4 +6,5 @@ end
 
 Foreman::Application.routes.draw do
   mount ForemanNutanixshim::Engine, at: '/foreman_nutanixshim'
+  resources :nutanixes, :controller => 'foreman_nutanixshim/nutanixes'
 end
