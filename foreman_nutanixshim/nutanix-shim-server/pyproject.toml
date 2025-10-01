@@ -1,0 +1,35 @@
+[project]
+name = "nutanix-shim-server"
+version = "0.1.0"
+description = "Server for the Foreman Nutanix shim plugin"
+readme = "README.md"
+authors = [
+    { name = "Miles Granger", email = "mgra@norceresearch.no" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "ntnx-clustermgmt-py-client~=4.0.0",
+    "ntnx-networking-py-client~=4.0.0",
+    "ntnx-prism-py-client~=4.0.0",
+    "ntnx-vmm-py-client~=4.0.0",
+]
+
+[project.scripts]
+nutanix-shim-server = "nutanix_shim_server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython>=8.34.0",
+    "pre-commit>=4.1.0",
+    "pyright>=1.1.396",
+    "pytest-mock>=3.14.0",
+    "pytest>=8.3.5",
+    "ruff-lsp>=0.0.62",
+]
+
+[tool.pytest.init_options]
+addopts = "-v"
