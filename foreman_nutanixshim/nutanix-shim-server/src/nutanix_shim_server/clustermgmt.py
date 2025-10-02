@@ -58,7 +58,6 @@ class ClusterMgmt:
         resp: cm.ListClustersApiResponse = self.clusters_api.list_clusters()
         clusters: None | list[cm.Cluster] = resp.data
         if clusters:
-            embed()
             return [
                 ClusterMetadata.from_nutanix_cluster(cluster) for cluster in clusters
             ]

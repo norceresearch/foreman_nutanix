@@ -1,18 +1,24 @@
 module ForemanNutanixshim
 
-  # Struct for selected cluster
-  NutanixCluster = Struct.new(:id, :name)
-
   class Nutanix < ComputeResource
 
     attr_accessor :endpoint, :cluster
 
-    # TODO: Impl discovering available clusters from django app
     def available_clusters
-      [
-        NutanixCluster.new("a", "Cluster A"),
-        NutanixCluster.new("b", "Cluster B")
-      ]
+      # TODO: config for nutanix shim server
+      uri = URI("http://localhost:8000/api/v1/clustermgmt/list-clusters")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+      Rails.logger.debug "#{data}"
+
+      # Convert array of hashmaps to structs for templating
+      clusters = data.map do |cluster|
+        cluster[:expanded_name] = "#{cluster['name']} (#{cluster['arch']})"
+        OpenStruct.new(cluster)
+      end
+      Rails.logger.debug "#{clusters}"
+
+      clusters
     end
 
     def self.provider_friendly_name
