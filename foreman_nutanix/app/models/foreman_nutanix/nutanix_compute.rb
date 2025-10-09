@@ -1,15 +1,10 @@
 module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :creation_timestamp, :machine_type, :network_interfaces, :volumes,
-      :associate_external_ip, :network, :zone, :zone_name, :image_id, :disks, :metadata
+      :associate_external_ip, :network, :zone, :zone_name, :image_id, :disks, :metadata, :cluster
 
-    def initialize(client:, zone:, identity: nil, instance: nil, args: {})
-      @zone = zone
-      @identity = identity
-      @instance = instance
-
-      load if identity && instance.nil?
-      load_attributes(args)
+    def initialize(cluster, args: {})
+      @cluster = cluster
     end
 
     def persisted?
@@ -123,12 +118,6 @@ module ForemanNutanix
 
     def load
       @instance = @client.instance(@zone.split('/').last, identity)
-    end
-
-    def load_attributes(args_for_new)
-      klass = NutanixCloudCompute::ComputeAttributes.new(@client)
-      attrs = @instance ? klass.for_instance(@instance) : klass.for_new(args_for_new)
-      attrs.each { |name, value| instance_variable_set("@#{name}", value) }
     end
   end
 end

@@ -1,6 +1,8 @@
 # rubocop:disable Rails/InverseOf, Metrics/ClassLength
 module ForemanNutanix
   class GCE < ::ComputeResource
+    attr_accessor :cluster
+
     has_one :key_pair, foreign_key: :compute_resource_id, dependent: :destroy
     before_create :setup_key_pair
     validates :cluster, presence: true
@@ -24,10 +26,6 @@ module ForemanNutanix
 
     def self.provider_friendly_name
       'Nutanix'
-    end
-
-    def cluster
-      'FooBar'
     end
 
     def to_label
@@ -69,7 +67,7 @@ module ForemanNutanix
     end
 
     def new_vm(args = {})
-      Rails.logger.info("new_vm w/ args: #{args}")
+      Rails.logger.info("new_vm w/ args: #{args} and cluster: #{cluster}")
 
       # Todo
       # vm_args = args.deep_symbolize_keys
@@ -78,7 +76,7 @@ module ForemanNutanix
       # volumes_nested_attrs = vm_args.delete(:volumes_attributes)
       # vm_args[:volumes] = nested_attributes_for(:volumes, volumes_nested_attrs) if volumes_nested_attrs
 
-      NutanixCompute.new(client: client, zone: zone, args: vm_args)
+      NutanixCompute.new(cluster: cluster, args: args)
     end
 
     def create_vm(args = {})
