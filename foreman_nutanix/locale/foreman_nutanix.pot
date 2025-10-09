@@ -1,0 +1,131 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the foreman_nutanix package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: foreman_nutanix 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-02-20 10:11+0100\n"
+"PO-Revision-Date: 2025-02-20 10:11+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:9
+msgid "Certificate path, for GCE only"
+msgstr ""
+
+#: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:10
+msgid "Zone, for GCE only"
+msgstr ""
+
+#: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:11
+msgid "Deprecated, project is automatically loaded from the JSON file. For GCE only"
+msgstr ""
+
+#: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:12
+msgid "Deprecated, email is automatically loaded from the JSON file. For GCE only"
+msgstr ""
+
+#: ../app/controllers/foreman_nutanix/api/v2/compute_resources_extensions.rb:25
+msgid ""
+"The email parameter is deprecated, value is automatically loaded from the JSON"
+" file"
+msgstr ""
+
+#: ../app/controllers/foreman_nutanix/api/v2/compute_resources_extensions.rb:30
+msgid ""
+"The project parameter is deprecated, value is automatically loaded from the JS"
+"ON file"
+msgstr ""
+
+#: ../app/models/foreman_nutanix/gce.rb:128
+msgid "console is not available at this time because the instance is powered off"
+msgstr ""
+
+#: ../app/models/foreman_nutanix/gce.rb:172
+msgid "Missing an image for operating system!"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_gce.html.erb:3
+msgid "JSON key"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_gce.html.erb:9
+#: ../app/views/compute_resources_vms/show/_gce.html.erb:11
+msgid "Zone"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_gce.html.erb:10
+msgid "Load Zones"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:3
+msgid "Machine type"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:12
+msgid "Please select an image"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:13
+#: ../app/views/compute_resources_vms/show/_gce.html.erb:18
+msgid "Image"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:17
+msgid "Network"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:18
+msgid "Associate Ephemeral External IP"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/gce/_volume.html.erb:5
+msgid "Size (GB)"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/index/_gce.html.erb:3
+msgid "Name"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/index/_gce.html.erb:4
+msgid "Type"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/index/_gce.html.erb:5
+msgid "State"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/index/_gce.html.erb:6
+msgid "Actions"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/show/_gce.html.erb:6
+msgid "Properties"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/show/_gce.html.erb:10
+msgid "Machine Type"
+msgstr ""
+
+#: ../app/views/images/form/_gce.html.erb:1
+msgid ""
+"The user that is used to ssh into the instance, normally cloud-user, ec2-user,"
+" ubuntu, etc. Note: nutanix engine doesn't support SSH for the root user."
+msgstr ""
+
+#: ../app/views/images/form/_gce.html.erb:3
+msgid "Does this image support user data input (e.g. via cloud-init)?"
+msgstr ""
+
+#: gemspec.rb:2
+msgid "nutanix Compute Engine plugin for the Foreman."
+msgstr ""

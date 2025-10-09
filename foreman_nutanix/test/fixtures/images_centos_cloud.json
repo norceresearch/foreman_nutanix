@@ -1,0 +1,11 @@
+{
+  "id": "projects/centos-cloud/global/images",
+  "items": [
+    {
+      "name": "centos-6",
+      "kind": "compute#image"
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images",
+  "kind": "compute#imageList"
+}

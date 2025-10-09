@@ -1,0 +1,13 @@
+{
+  "kind": "compute#operation",
+  "id": "6200725776819157246",
+  "name": "operation-1653565614407-5dfe8bf0f40b4-855dec88-23e914e4",
+  "zone": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-west3-c",
+  "operationType": "insert",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-west3-c/instances/mega-chad-1",
+  "targetId": "3160050662526604865",
+  "status": "DONE",
+  "insertTime": "2022-05-26T04:46:55.770-07:00",
+  "startTime": "2022-05-26T04:46:55.770-07:00",
+  "endTime": "2022-05-26T04:47:02.023-07:00"
+}

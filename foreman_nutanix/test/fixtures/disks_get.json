@@ -1,0 +1,13 @@
+{
+  "kind": "compute#disk",
+  "id": "8772167819860748300",
+  "creationTimestamp": "2022-03-30T01:37:55.394-07:00",
+  "name": "foreman-disk1",
+  "sizeGb": "500",
+  "zone": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b",
+  "status": "READY",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/disks/foreman-disk1",
+  "type": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/diskTypes/pd-standard",
+  "labelFingerprint": "42WmSpB8rSM=",
+  "physicalBlockSizeBytes": "4096"
+}

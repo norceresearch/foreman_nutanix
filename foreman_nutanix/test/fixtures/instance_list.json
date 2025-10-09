@@ -1,0 +1,86 @@
+{
+  "kind": "compute#instanceList",
+  "id": "projects/coastal-haven-123456/zones/us-east1-b/instances",
+  "items": [
+    {
+      "kind": "compute#instance",
+      "id": "123",
+      "creationTimestamp": "2022-03-30T04:59:13.453-07:00",
+      "name": "foreman-test-google1648641548",
+      "tags": {
+        "fingerprint": "42WmSpB8rSM="
+      },
+      "machineType": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/machineTypes/e2-micro",
+      "status": "TERMINATED",
+      "zone": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b",
+      "networkInterfaces": [
+        {
+          "kind": "compute#networkInterface",
+          "network": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/global/networks/default",
+          "subnetwork": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/regions/europe-west3/subnetworks/default",
+          "networkIP": "10.156.0.15",
+          "name": "nic0",
+          "fingerprint": "TJa5cxJEqkU=",
+          "stackType": "IPV4_ONLY"
+        }
+      ],
+      "disks": [
+        {
+          "kind": "compute#attachedDisk",
+          "type": "PERSISTENT",
+          "mode": "READ_WRITE",
+          "source": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/disks/foreman-test-google1648641548-disk1",
+          "deviceName": "persistent-disk-0",
+          "index": 0,
+          "boot": true,
+          "autoDelete": true,
+          "licenses": [
+            "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/licenses/centos-stream"
+          ],
+          "interface": "SCSI",
+          "guestOsFeatures": [
+            {
+              "type": "UEFI_COMPATIBLE"
+            },
+            {
+              "type": "VIRTIO_SCSI_MULTIQUEUE"
+            },
+            {
+              "type": "SEV_CAPABLE"
+            },
+            {
+              "type": "GVNIC"
+            }
+          ],
+          "diskSizeGb": "23"
+        }
+      ],
+      "metadata": {
+        "kind": "compute#metadata",
+        "fingerprint": "YazRB9ehpGM="
+      },
+      "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/instances/foreman-test-google1648641548",
+      "scheduling": {
+        "onHostMaintenance": "MIGRATE",
+        "automaticRestart": true,
+        "preemptible": false
+      },
+      "cpuPlatform": "Unknown CPU Platform",
+      "labelFingerprint": "42WmSpB8rSM=",
+      "startRestricted": false,
+      "deletionProtection": false,
+      "shieldedInstanceConfig": {
+        "enableSecureBoot": false,
+        "enableVtpm": true,
+        "enableIntegrityMonitoring": true
+      },
+      "shieldedInstanceIntegrityPolicy": {
+        "updateAutoLearnPolicy": true
+      },
+      "fingerprint": "kDkIG75oL1k=",
+      "lastStartTimestamp": "2022-04-07T06:09:42.109-07:00",
+      "lastStopTimestamp": "2022-04-07T06:52:58.005-07:00"
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/instances"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "projects/coastal-haven-123456/global/networks",
+  "items": [
+    {
+      "id": "0",
+      "name": "default"
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/global/networks",
+  "kind": "compute#networkList"
+}

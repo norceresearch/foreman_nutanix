@@ -1,0 +1,14 @@
+{
+  "kind": "compute#operation",
+  "id": "7996175101872145267",
+  "name": "operation-1648639388515-5db6dc51d7cb9-84b381ef-f190800c",
+  "zone": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b",
+  "operationType": "delete",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/disks/foreman-disk1",
+  "targetId": "8772167819860748300",
+  "status": "RUNNING",
+  "progress": 0,
+  "insertTime": "2022-03-30T04:23:08.704-07:00",
+  "startTime": "2022-03-30T04:23:08.711-07:00",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/operations/operation-1648639388515-5db6dc51d7cb9-84b381ef-f190800c"
+}

@@ -1,0 +1,5 @@
+{
+  "id": "projects/project-id/global/images",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/project-id/global/images",
+  "kind": "compute#imageList"
+}

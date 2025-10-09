@@ -1,0 +1,17 @@
+{
+  "id": "projects/deprecated/global/images",
+  "items": [
+    {
+      "id": "0",
+      "name": "deprecated-image",
+      "deprecated": {
+        "state": "DEPRECATED",
+        "replacement": "https://www.googleapis.com/compute/v1/projects/centos-cloud/global/images/centos-6-v20150226"
+      },
+      "status": "READY",
+      "kind": "compute#image"
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/deprecated/global/images",
+  "kind": "compute#imageList"
+}

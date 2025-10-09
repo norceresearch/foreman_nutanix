@@ -1,0 +1,12 @@
+{
+  "kind": "compute#operation",
+  "id": "1043042221276375052",
+  "name": "operation-1648629475145-5db6b763b7595-82e7ebef-451ed31a",
+  "zone": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b",
+  "operationType": "insert",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/us-east1-b/disks/foreman-disk1",
+  "targetId": "8772167819860748300",
+  "status": "RUNNING",
+  "progress": 0,
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/operations/operation-1648629475145-5db6b763b7595-82e7ebef-451ed31a"
+}

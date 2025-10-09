@@ -1,0 +1,15 @@
+{
+  "kind": "compute#operation",
+  "id": "6200725776819157246",
+  "name": "operation-1648641552671-5db6e461be422-a2599aa0-27cd29fc",
+  "zone": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-west3-c",
+  "operationType": "insert",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-west3-c/instances/foreman-test-google1648641548",
+  "targetId": "6079655721101293822",
+  "status": "RUNNING",
+  "user": "modular-ethos-98809@appspot.gserviceaccount.com",
+  "progress": 0,
+  "insertTime": "2022-03-30T04:59:13.515-07:00",
+  "startTime": "2022-03-30T04:59:13.516-07:00",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-west3-c/operations/operation-1648641552671-5db6e461be422-a2599aa0-27cd29fc"
+}

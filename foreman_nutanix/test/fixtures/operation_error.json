@@ -1,0 +1,26 @@
+{
+  "kind": "compute#operation",
+  "id": "150820958032316172",
+  "name": "operation-1654585826373-5e0d6486e6dac-12d06773-e45211ed",
+  "zone": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-central2-a",
+  "operationType": "insert",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-central2-a/instances/louie-stahly-example-com",
+  "targetId": "7654338946829338380",
+  "status": "DONE",
+  "user": "coconut-service-account@modular-ethos-98809.iam.gserviceaccount.com",
+  "progress": 100,
+  "insertTime": "2022-06-07T00:10:27.995-07:00",
+  "startTime": "2022-06-07T00:10:27.996-07:00",
+  "endTime": "2022-06-07T00:10:34.467-07:00",
+  "error": {
+    "errors": [
+      {
+        "code": "QUOTA_EXCEEDED",
+        "message": "Quota 'CPUS' exceeded.  Limit: 8.0 in region europe-central2."
+      }
+    ]
+  },
+  "httpErrorStatusCode": 403,
+  "httpErrorMessage": "FORBIDDEN",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/modular-ethos-98809/zones/europe-central2-a/operations/operation-1654585826373-5e0d6486e6dac-12d06773-e45211ed"
+}

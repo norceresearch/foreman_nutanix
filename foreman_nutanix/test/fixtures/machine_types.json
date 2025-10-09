@@ -1,0 +1,12 @@
+{
+  "id": "projects/coastal-haven-123456/zones/us-east1-b/machineTypes",
+  "items": [
+    {
+      "id": "0",
+      "name": "machine_type_001",
+      "kind": "compute#machineType"
+    }
+  ],
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/machineTypes",
+  "kind": "compute#machineTypeList"
+}

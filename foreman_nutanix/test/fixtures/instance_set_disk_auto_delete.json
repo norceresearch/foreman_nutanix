@@ -1,0 +1,14 @@
+{
+  "kind": "compute#operation",
+  "id": "4987965516534051502",
+  "name": "operation-1648708672817-5db7de6c808c0-7970bcc7-68670f06",
+  "zone": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b",
+  "operationType": "setDiskAutoDelete",
+  "targetLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/instances/foreman-test-google1648641548",
+  "targetId": "6079655721101293822",
+  "status": "RUNNING",
+  "progress": 0,
+  "insertTime": "2022-03-30T23:37:53.201-07:00",
+  "startTime": "2022-03-30T23:37:53.212-07:00",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/coastal-haven-123456/zones/us-east1-b/operations/operation-1648708672817-5db7de6c808c0-7970bcc7-68670f06"
+}
