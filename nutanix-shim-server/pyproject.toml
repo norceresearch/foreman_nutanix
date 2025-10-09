@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Miles Granger", email = "mgra@norceresearch.no" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.118.0",
     "ntnx-clustermgmt-py-client~=4.0.0",
