@@ -1,17 +1,7 @@
-<% clusters =
-  begin
-    f.object.available_clusters
-  rescue StandardError
-    ["Empty"]
-  end %>
-<%= selectable_f(
-  f,
-  :cluster,
-  clusters,
-  {},
-  {
-    label: _("Cluster"),
-    disabled: clusters.empty?,
-    help_inline_permanent: "Cluster Resource",
-  },
-) %>
+<%= select_f f,
+:cluster,
+@compute_resource.available_clusters,
+:id,
+:name,
+{},
+{ label: _("Cluster") } %>

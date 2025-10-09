@@ -1,14 +1,19 @@
 # rubocop:disable Rails/InverseOf, Metrics/ClassLength
 module ForemanNutanix
   class GCE < ::ComputeResource
-    attr_accessor :cluster
-
     has_one :key_pair, foreign_key: :compute_resource_id, dependent: :destroy
-    before_create :setup_key_pair
     validates :cluster, presence: true
 
     def self.available?
       true
+    end
+
+    def cluster
+      url
+    end
+
+    def cluster=(cluster)
+      self.url = cluster
     end
 
     def available_clusters
@@ -19,7 +24,8 @@ module ForemanNutanix
 
       # Convert array of hashmaps to structs for templating
       data.map do |cluster|
-        cluster[:expanded_name] = "#{cluster['name']} (#{cluster['arch']})"
+        cluster[:name] = "#{cluster['name']} (#{cluster['arch']})"
+        cluster[:id] = cluster['ext_id']
         OpenStruct.new(cluster)
       end
     end
@@ -115,13 +121,6 @@ module ForemanNutanix
 
     def self.model_name
       ComputeResource.model_name
-    end
-
-    def setup_key_pair
-      require 'sshkey'
-
-      key = ::SSHKey.generate
-      build_key_pair name: "foreman-#{id}#{Foreman.uuid}", secret: key.private_key, public: key.ssh_public_key
     end
 
     def self.provider_friendly_name
