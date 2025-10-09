@@ -3,7 +3,7 @@ module ForemanNutanix
     attr_reader :identity, :name, :hostname, :creation_timestamp, :machine_type, :network_interfaces, :volumes,
       :associate_external_ip, :network, :zone, :zone_name, :image_id, :disks, :metadata, :cluster
 
-    def initialize(cluster, args: {})
+    def initialize(cluster:, args: {})
       @cluster = cluster
     end
 

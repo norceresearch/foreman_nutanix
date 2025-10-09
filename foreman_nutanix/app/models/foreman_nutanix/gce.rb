@@ -52,15 +52,17 @@ module ForemanNutanix
     alias_method :available_zones, :zones
 
     def networks
-      client.networks.map(&:name)
+      # client.networks.map(&:name)
+      [OpenStruct.new({ id: 'some-network', name: 'SomeNetwork' })]
     end
 
     def available_networks(_cluster_id = nil)
-      client.networks
+      [OpenStruct.new({ id: 'some-network', name: 'SomeNetwork' })]
     end
 
     def machine_types
-      client.machine_types(zone)
+      # client.machine_types(zone)
+      [OpenStruct.new({ id: 'foo', name: 'Foo' })]
     end
     alias_method :available_flavors, :machine_types
 
@@ -132,8 +134,9 @@ module ForemanNutanix
     end
 
     def new_volume(attrs = {})
-      default_attrs = { disk_size_gb: 20 }
-      Nutanix::Cloud::Compute::V1::AttachedDisk.new(**attrs.merge(default_attrs))
+      # default_attrs = { disk_size_gb: 20 }
+      # Nutanix::Cloud::Compute::V1::AttachedDisk.new(**attrs.merge(default_attrs))
+      Rails.logger.info("new_volume -> attrs=#{attrs}")
     end
 
     def console(uuid)
