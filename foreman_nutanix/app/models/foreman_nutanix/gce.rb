@@ -39,7 +39,7 @@ module ForemanNutanix
     end
 
     def capabilities
-      %i[image new_volume]
+      %i[image]
     end
 
     def provided_attributes
