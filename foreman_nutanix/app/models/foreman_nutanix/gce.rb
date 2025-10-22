@@ -8,12 +8,12 @@ module ForemanNutanix
       true
     end
 
-    def cluster
-      url
-    end
-
     def cluster=(cluster)
       self.url = cluster
+    end
+
+    def cluster
+      url
     end
 
     def cluster_details
@@ -38,7 +38,7 @@ module ForemanNutanix
     end
 
     def to_label
-      "#{name} (#{zone}-#{provider_friendly_name})"
+      "#{name} (#{provider_friendly_name})"
     end
 
     def capabilities
@@ -48,11 +48,6 @@ module ForemanNutanix
     def provided_attributes
       super.merge({ ip: :vm_ip_address })
     end
-
-    def zones
-      client.zones.map(&:name)
-    end
-    alias_method :available_zones, :zones
 
     def networks
       # client.networks.map(&:name)
@@ -68,14 +63,6 @@ module ForemanNutanix
       [OpenStruct.new({ id: 'foo', name: 'Foo' })]
     end
     alias_method :available_flavors, :machine_types
-
-    def zone
-      url
-    end
-
-    def zone=(zone)
-      self.url = zone
-    end
 
     def new_vm(args = {})
       Rails.logger.info("new_vm w/ args: #{args} and cluster: #{cluster}")
