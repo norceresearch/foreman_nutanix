@@ -59,19 +59,31 @@ module ForemanNutanix
       manage_instance(:delete, zone: zone, instance: instance_identity)
     end
 
+    def image_id=(id)
+      self._image_id = id
+    end
+
+    def image_id
+      _image_id
+    end
+
+    def list_images
+      # TODO: config for nutanix shim server
+      uri = URI('http://localhost:8000/api/v1/vmm/list-images')
+      response = Net::HTTP.get_response(uri)
+      JSON.parse(response.body)
+    end
+
     # Setting filter to '(deprecated.state != "DEPRECATED") AND (deprecated.state != "OBSOLETE")'
     # doesn't work and returns empty array, no idea what is happening there
     def images(filter: nil)
       # projects = [project_id] + all_projects
       # all_images = projects.map { |project| list_images(project, filter: filter) }
       # all_images.flatten.reject(&:deprecated)
-      [
-        OpenStruct.new({
-          id: 'image-123',
-          name: 'Ubuntu 24.04 Base',
-          username: 'ubuntu',
-        }),
-      ]
+      list_images.map do |image|
+        image[:uuid] = image[:ext_id]
+        OpenStruct.new(image)
+      end
     end
 
     def image(uuid)
@@ -149,16 +161,6 @@ module ForemanNutanix
       resource_client(resource_name).delete(project: project_id, zone: zone, **opts)
     rescue ::Nutanix::Cloud::Error => e
       raise Foreman::WrappedException.new(e, 'Could not delete Nutanix resource %s', resource_name)
-    end
-
-    def list_images(_project, **_opts)
-      [
-        {
-          id: 'image-123',
-          name: 'Ubuntu 24.04 Base',
-          username: 'ubuntu',
-        },
-      ]
     end
 
     def manage_instance(action, **opts)
