@@ -168,7 +168,7 @@ module ForemanNutanix
     private
 
     def client
-      @client ||= ForemanNutanix::NutanixComputeAdapter.new
+      @client ||= ForemanNutanix::NutanixComputeAdapter.new(cluster)
     end
 
     def set_vm_volumes_attributes(vm, vm_attrs)

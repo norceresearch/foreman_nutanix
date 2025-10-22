@@ -1,6 +1,7 @@
 module ForemanNutanix
   class NutanixComputeAdapter
-    def initialize
+    def initialize(cluster_id)
+      @cluster_id = cluster_id
     end
 
     def project_id
@@ -75,7 +76,8 @@ module ForemanNutanix
     end
 
     def images(filter: nil)
-      list_images.map do |image|
+      list_images.filter_map do |image|
+        next unless image['cluster_location_ext_ids'].include?(@cluster_id)
         image[:id] = image['ext_id']
         image[:name] = "#{image['name']} - (#{image['type']})"
         OpenStruct.new(image)
