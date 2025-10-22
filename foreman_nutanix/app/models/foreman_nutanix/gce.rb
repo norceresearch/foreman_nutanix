@@ -168,7 +168,7 @@ module ForemanNutanix
     private
 
     def client
-      @client ||= ForemanNutanix::NutanixComputeAdapter.new(auth_json_string: password)
+      @client ||= ForemanNutanix::NutanixComputeAdapter.new
     end
 
     def set_vm_volumes_attributes(vm, vm_attrs)

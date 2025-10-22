@@ -1,11 +1,10 @@
 module ForemanNutanix
   class NutanixComputeAdapter
-    def initialize(auth_json_string:)
-      @auth_json = JSON.parse(auth_json_string)
+    def initialize
     end
 
     def project_id
-      @auth_json['project_id']
+      'project-id-here'
     end
 
     # ------ RESOURCES ------
@@ -63,9 +62,16 @@ module ForemanNutanix
     # Setting filter to '(deprecated.state != "DEPRECATED") AND (deprecated.state != "OBSOLETE")'
     # doesn't work and returns empty array, no idea what is happening there
     def images(filter: nil)
-      projects = [project_id] + all_projects
-      all_images = projects.map { |project| list_images(project, filter: filter) }
-      all_images.flatten.reject(&:deprecated)
+      # projects = [project_id] + all_projects
+      # all_images = projects.map { |project| list_images(project, filter: filter) }
+      # all_images.flatten.reject(&:deprecated)
+      [
+        OpenStruct.new({
+          id: 'image-123',
+          name: 'Ubuntu 24.04 Base',
+          username: 'ubuntu',
+        }),
+      ]
     end
 
     def image(uuid)
@@ -145,12 +151,14 @@ module ForemanNutanix
       raise Foreman::WrappedException.new(e, 'Could not delete Nutanix resource %s', resource_name)
     end
 
-    def list_images(project, **opts)
-      resource_name = 'images'
-      response = resource_client(resource_name).list(project: project, **opts).response
-      response.items
-    rescue ::Nutanix::Cloud::Error => e
-      raise Foreman::WrappedException.new(e, 'Cannot list Nutanix resource %s', resource_name)
+    def list_images(_project, **_opts)
+      [
+        {
+          id: 'image-123',
+          name: 'Ubuntu 24.04 Base',
+          username: 'ubuntu',
+        },
+      ]
     end
 
     def manage_instance(action, **opts)
