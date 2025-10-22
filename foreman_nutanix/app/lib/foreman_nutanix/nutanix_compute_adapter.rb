@@ -74,14 +74,10 @@ module ForemanNutanix
       JSON.parse(response.body)
     end
 
-    # Setting filter to '(deprecated.state != "DEPRECATED") AND (deprecated.state != "OBSOLETE")'
-    # doesn't work and returns empty array, no idea what is happening there
     def images(filter: nil)
-      # projects = [project_id] + all_projects
-      # all_images = projects.map { |project| list_images(project, filter: filter) }
-      # all_images.flatten.reject(&:deprecated)
       list_images.map do |image|
-        image[:uuid] = image[:ext_id]
+        image[:id] = image['ext_id']
+        image[:name] = "#{image['name']} - (#{image['type']})"
         OpenStruct.new(image)
       end
     end
