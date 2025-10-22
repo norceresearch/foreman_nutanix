@@ -16,6 +16,10 @@ module ForemanNutanix
       self.url = cluster
     end
 
+    def cluster_details
+      available_clusters.find { |cluster| cluster.ext_id == self.cluster }
+    end
+
     def available_clusters
       # TODO: config for nutanix shim server
       uri = URI('http://localhost:8000/api/v1/clustermgmt/list-clusters')
@@ -25,7 +29,6 @@ module ForemanNutanix
       # Convert array of hashmaps to structs for templating
       data.map do |cluster|
         cluster[:name] = "#{cluster['name']} (#{cluster['arch']})"
-        cluster[:id] = cluster['ext_id']
         OpenStruct.new(cluster)
       end
     end
