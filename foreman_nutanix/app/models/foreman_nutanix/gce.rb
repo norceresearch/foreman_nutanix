@@ -12,6 +12,14 @@ module ForemanNutanix
       self.url = cluster
     end
 
+    def image_id=(id)
+      self._image_id = id
+    end
+
+    def image_id
+      _image_id
+    end
+
     def cluster
       url
     end
