@@ -7,7 +7,7 @@ module Foreman
         class_methods do
           def compute_resource_params_filter
             super.tap do |filter|
-              filter.permit :key_path, :zone, :cluster
+              filter.permit :key_path, :zone, :cluster, :host_id
             end
           end
         end

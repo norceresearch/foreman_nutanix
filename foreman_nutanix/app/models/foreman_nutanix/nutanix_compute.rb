@@ -77,6 +77,7 @@ module ForemanNutanix
     end
 
     def vm_ip_address
+      return '123.45.678'
       return if @instance.network_interfaces.empty?
 
       @instance.network_interfaces.first.access_configs.first&.nat_i_p
