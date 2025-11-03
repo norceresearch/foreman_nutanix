@@ -69,14 +69,15 @@ module ForemanNutanix
     end
 
     def list_images
-      # TODO: config for nutanix shim server
-      uri = URI('http://localhost:8000/api/v1/vmm/list-images')
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/list-images")
       response = Net::HTTP.get_response(uri)
       JSON.parse(response.body)
     end
 
     def images(filter: nil)
       list_images.filter_map do |image|
+        # Filter out only images assignable to this cluster
         next unless image['cluster_location_ext_ids'].include?(@cluster_id)
         image[:id] = image['ext_id']
         image[:name] = "#{image['name']} - (#{image['type']})"

@@ -29,8 +29,8 @@ module ForemanNutanix
     end
 
     def available_clusters
-      # TODO: config for nutanix shim server
-      uri = URI('http://localhost:8000/api/v1/clustermgmt/list-clusters')
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-clusters")
       response = Net::HTTP.get_response(uri)
       data = JSON.parse(response.body)
 
