@@ -50,7 +50,7 @@ module ForemanNutanix
     end
 
     def capabilities
-      %i[image]
+      %i[build]
     end
 
     def provided_attributes

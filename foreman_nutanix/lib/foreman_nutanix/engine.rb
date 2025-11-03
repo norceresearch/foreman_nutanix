@@ -13,7 +13,6 @@ module ForemanNutanix
     initializer 'foreman_nutanix.register_plugin', before: :finisher_hook do |_app|
       Foreman::Plugin.register :foreman_nutanix do
         requires_foreman '>= 3.13.0'
-        register_global_js_file 'global'
         register_gettext
 
         in_to_prepare do

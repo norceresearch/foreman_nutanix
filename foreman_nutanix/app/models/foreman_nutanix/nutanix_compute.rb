@@ -42,9 +42,9 @@ module ForemanNutanix
       @name
     end
 
-    def interfaces
-      @network_interfaces
-    end
+    # def interfaces
+    #   @network_interfaces
+    # end
 
     def create_volumes
       @volumes.each do |vol|
@@ -60,8 +60,7 @@ module ForemanNutanix
     end
 
     def create_instance
-      args = NutanixCloudCompute::ComputeAttributes.new(@client).for_create(self)
-      @client.insert_instance(@zone, args)
+      raise 'NOT IMPLEMENTED'
     end
 
     def set_disk_auto_delete
