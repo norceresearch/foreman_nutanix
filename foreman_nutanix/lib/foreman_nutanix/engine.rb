@@ -24,11 +24,15 @@ module ForemanNutanix
     # Include concerns in this config.to_prepare block
     config.to_prepare do
       ::Host::Managed.include ForemanNutanix::HostManagedExtensions
+
       ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ComputeResourcesExtensions
       ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ApipieExtensions
       ::Api::V2::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
+
       ::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
-      Nutanix::Cloud::Compute::V1::AttachedDisk.include NutanixExtensions::AttachedDisk
+
+      ::Api::V2::HostsController.include ForemanNutanix::Api::V2::HostsController
+      # Nutanix::Cloud::Compute::V1::AttachedDisk.include NutanixExtensions::AttachedDisk
     rescue StandardError => e
       Rails.logger.warn "ForemanNutanix: skipping engine hook (#{e})"
     end

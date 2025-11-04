@@ -101,7 +101,7 @@ module ForemanNutanix
     end
 
     def find_vm_by_uuid(uuid)
-      Rails.logger.info("find_vm_by_uuid  #{uuid}")
+      Rails.logger.info("find_vm_by_uuid!!!  #{uuid}")
     end
 
     def destroy_vm(uuid)

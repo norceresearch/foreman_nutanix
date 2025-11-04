@@ -1,6 +1,19 @@
 module ForemanNutanix
   module Api
     module V2
+      module HostsController
+        extend ActiveSupport::Concern
+
+        included do
+          # https://github.com/theforeman/foreman/blob/develop/app/controllers/api/v2/hosts_controller.rb
+          def power_status
+            # NOTE: params.id is the FQDN
+            Rails.logger.info "HostsController::power_status #{params[:id]}"
+            render json: { id: @host.id, state: 'on', title: 'On', statusText: 'Powered On' }
+          end
+        end
+      end
+
       module ComputeResourcesExtensions
         extend ActiveSupport::Concern
 

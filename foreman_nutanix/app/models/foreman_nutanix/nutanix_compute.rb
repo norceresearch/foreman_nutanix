@@ -29,13 +29,11 @@ module ForemanNutanix
     alias_method :state, :status
 
     def start
-      raise Foreman::Exception('unable to start machine that is not persisted') unless persisted?
-      @client.start(@zone, identity)
+      Rails.logger.info 'NutanixCompute::start'
     end
 
     def stop
-      raise Foreman::Exception('unable to stop machine that is not persisted') unless persisted?
-      @client.stop(@zone, identity)
+      Rails.logger.info 'NutanixCompute::stop'
     end
 
     def to_s
@@ -85,6 +83,7 @@ module ForemanNutanix
     alias_method :public_ip_address, :vm_ip_address
 
     def private_ip_address
+      return '127.0.0.3'
       return unless @instance.network_interfaces.any?
 
       @instance.network_interfaces.first.network_i_p
@@ -117,7 +116,7 @@ module ForemanNutanix
     private
 
     def load
-      @instance = @client.instance(@zone.split('/').last, identity)
+      raise 'NOT IMPLEMENTED - NutanixCompute::load'
     end
   end
 end
