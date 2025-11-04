@@ -8,7 +8,10 @@ module ForemanNutanix
           # https://github.com/theforeman/foreman/blob/develop/app/controllers/api/v2/hosts_controller.rb
           def power_status
             # NOTE: params.id is the FQDN
+            #       @host is class Host::Manged
             Rails.logger.info "HostsController::power_status #{params[:id]}"
+            Rails.logger.info "HostsController::host #{@host.class}"
+
             render json: { id: @host.id, state: 'on', title: 'On', statusText: 'Powered On' }
           end
         end
