@@ -1,211 +1,177 @@
-# rubocop:disable Rails/InverseOf, Metrics/ClassLength
 module ForemanNutanix
   class GCE < ComputeResource
-    has_one :key_pair, foreign_key: :compute_resource_id, dependent: :destroy
     validates :cluster, presence: true
 
-    after_initialize :init_client
-    after_find :init_client
-
-    def init_client(args = {})
-      Rails.logger.info "GCE::init_client #{args} self=#{self} "
+    def self.provider_friendly_name
+      'Nutanix'
     end
 
     def self.available?
       true
     end
 
+    def capabilities
+      [:build]
+    end
+
     def cluster=(cluster)
       self.url = cluster
-    end
-
-    def image_id=(id)
-      self._image_id = id
-    end
-
-    def image_id
-      _image_id
     end
 
     def cluster
       url
     end
 
-    def cluster_details
-      available_clusters.find { |cluster| cluster.ext_id == self.cluster }
-    end
-
-    def available_clusters
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-clusters")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
-
-      # Convert array of hashmaps to structs for templating
-      data.map do |cluster|
-        cluster[:name] = "#{cluster['name']} (#{cluster['arch']})"
-        OpenStruct.new(cluster)
-      end
-    end
-
-    def self.provider_friendly_name
-      'Nutanix'
-    end
-
     def to_label
       "#{name} (#{provider_friendly_name})"
-    end
-
-    def capabilities
-      %i[build]
     end
 
     def provided_attributes
       super.merge({ ip: :vm_ip_address })
     end
 
-    def networks
-      # client.networks.map(&:name)
-      [OpenStruct.new({ id: 'some-network', name: 'SomeNetwork' })]
-    end
-
-    def available_networks(_cluster_id = nil)
-      [OpenStruct.new({ id: 'some-network', name: 'SomeNetwork' })]
-    end
-
-    def machine_types
-      # client.machine_types(zone)
-      [OpenStruct.new({ id: 'foo', name: 'Foo' })]
-    end
-    alias_method :available_flavors, :machine_types
-
-    def _new_vm(args = {})
-      Rails.logger.info("GCE::new_vm w/ args: #{args} and cluster: #{cluster}")
-
-      # Todo
-      # vm_args = args.deep_symbolize_keys
-
-      # # convert rails nested_attributes into a plain hash
-      # volumes_nested_attrs = vm_args.delete(:volumes_attributes)
-      # vm_args[:volumes] = nested_attributes_for(:volumes, volumes_nested_attrs) if volumes_nested_attrs
-
-      # NutanixCompute.new(cluster: cluster, args: args)
-    end
-
-    def create_vm(args)
-      Rails.logger.info("create_vm w/ args: #{args}")
-      # ssh_args = { username: find_os_image(args[:image_id])&.username, public_key: key_pair.public }
-      # vm = new_vm(args.merge(ssh_args))
-
-      # vm.create_volumes
-      # vm.create_instance
-      # vm.set_disk_auto_delete
-
-      # find_vm_by_uuid vm.hostname
-    rescue ::Nutanix::Cloud::Error => e
-      vm.destroy_volumes
-      raise Foreman::WrappedException.new(e, 'Cannot insert instance!')
-    end
-
-    def find_vm_by_uuid(uuid)
-      Rails.logger.info("find_vm_by_uuid!!!  #{uuid}")
-    end
-
-    def destroy_vm(uuid)
-      Rails.logger.info("destroy_vm #{uuid}")
-    rescue ActiveRecord::RecordNotFound
-      # if the VM does not exists, we don't really care.
+    # Test connection to the compute resource
+    def test_connection(options = {})
+      Rails.logger.info "=== NUTANIX: Testing connection to cluster #{cluster} ==="
       true
     end
 
-    def available_images(filter: filter_for_images)
-      client.images(filter: filter)
+    # Available clusters for selection
+    def available_clusters
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-clusters")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+
+      data.map do |cluster|
+        cluster[:name] = "#{cluster['name']} (#{cluster['arch']})"
+        OpenStruct.new(cluster)
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching clusters: #{e.message} ==="
+      []
     end
 
-    def filter_for_images
-      @filter_for_images ||= nil
+    # Available networks for VMs
+    def available_networks(_cluster_id = nil)
+      Rails.logger.info "=== NUTANIX: Returning available networks ==="
+      [OpenStruct.new({ id: 'default-network', name: 'Default Network' })]
     end
 
-    def self.model_name
-      ComputeResource.model_name
+    # Networks method (alias for available_networks)
+    def networks(opts = {})
+      Rails.logger.info "=== NUTANIX: NETWORKS called with opts: #{opts} ==="
+      available_networks
     end
 
-    def self.provider_friendly_name
-      'Nutanix'
+    # Available machine types/flavors
+    def available_flavors
+      Rails.logger.info "=== NUTANIX: Returning available flavors ==="
+      [OpenStruct.new({ id: 'small', name: 'Small (2 CPU, 4GB RAM)' })]
+    end
+    alias_method :machine_types, :available_flavors
+
+    # Available images
+    def available_images(_opts = {})
+      Rails.logger.info "=== NUTANIX: Returning available images ==="
+      [OpenStruct.new({ id: 'centos-7', name: 'CentOS 7' })]
     end
 
+    # Core provisioning method - this is what Foreman calls to create a VM
+    def create_vm(args = {})
+      Rails.logger.info "=== NUTANIX: CREATE_VM CALLED with args: #{args} ==="
+      Rails.logger.info "=== NUTANIX: CREATE_VM caller: #{caller_locations(1,3).join(', ')} ==="
+      
+      vm = new_vm(args)
+      Rails.logger.info "=== NUTANIX: CREATE_VM calling vm.save ==="
+      vm.save
+      
+      Rails.logger.info "=== NUTANIX: CREATE_VM returning VM: #{vm} ==="
+      find_vm_by_uuid(vm.identity)
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: CREATE_VM ERROR: #{e.message} ==="
+      raise e
+    end
+
+    # New VM instance (not persisted)
+    def new_vm(attr = {})
+      Rails.logger.info "=== NUTANIX: NEW_VM CALLED with attr: #{attr} ==="
+      vm_attrs = vm_instance_defaults.merge(attr.to_hash.deep_symbolize_keys)
+      Rails.logger.info "=== NUTANIX: NEW_VM merged attrs: #{vm_attrs} ==="
+      
+      # Use the Foreman pattern - client.servers.new returns our VM model
+      client.servers.new(vm_attrs)
+    end
+
+    # Default attributes for new VMs
+    def vm_instance_defaults
+      Rails.logger.info "=== NUTANIX: VM_INSTANCE_DEFAULTS called ==="
+      {
+        zone: 'default-zone',
+        machine_type: 'small'
+      }
+    end
+
+    # Find existing VM by UUID
+    def find_vm_by_uuid(uuid)
+      Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID CALLED with uuid: #{uuid} ==="
+      vm = NutanixCompute.new(cluster, { name: uuid })
+      Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID returning VM: #{vm} ==="
+      vm
+    end
+
+    # Destroy VM
+    def destroy_vm(uuid)
+      Rails.logger.info "=== NUTANIX: DESTROY_VM CALLED with uuid: #{uuid} ==="
+      true
+    rescue ActiveRecord::RecordNotFound
+      true
+    end
+
+    # Console access
+    def console(uuid)
+      Rails.logger.info "=== NUTANIX: CONSOLE CALLED with uuid: #{uuid} ==="
+      vm = find_vm_by_uuid(uuid)
+      {
+        'output' => 'Mock console output', 'timestamp' => Time.now.utc,
+        :type => 'log', :name => vm.name
+      }
+    end
+
+    # Associate host with VM
+    def associated_host(vm)
+      Rails.logger.info "=== NUTANIX: ASSOCIATED_HOST CALLED for vm: #{vm.name} ==="
+      associate_by('ip', [vm.vm_ip_address, vm.private_ip_address])
+    end
+
+    # User data support
     def user_data_supported?
       true
     end
 
+    # New volume creation
     def new_volume(attrs = {})
-      # default_attrs = { disk_size_gb: 20 }
-      # Nutanix::Cloud::Compute::V1::AttachedDisk.new(**attrs.merge(default_attrs))
-      Rails.logger.info("new_volume -> attrs=#{attrs}")
+      Rails.logger.info "=== NUTANIX: NEW_VOLUME CALLED with attrs: #{attrs} ==="
+      OpenStruct.new(attrs)
     end
 
-    def console(uuid)
-      vm = find_vm_by_uuid(uuid)
-
-      if vm.ready?
-        {
-          'output' => vm.serial_port_output, 'timestamp' => Time.now.utc,
-          :type => 'log', :name => vm.name
-        }
-      else
-        raise ::Foreman::Exception,
-          N_('console is not available at this time because the instance is powered off')
-      end
+    # Host attributes for VM creation
+    def host_create_attrs(host)
+      Rails.logger.info "=== NUTANIX: HOST_CREATE_ATTRS CALLED for host: #{host.name} ==="
+      super
     end
 
-    def associated_host(vm)
-      associate_by('ip', [vm.public_ip_address, vm.private_ip_address])
-    end
-
-    def vms(attrs = {})
-      filtered_attrs = attrs.except(:eager_loading)
-      NutanixCloudCompute::ComputeCollection.new(client, zone, filtered_attrs)
-    end
-
-    # ----# Nutanix specific #-----
-
-    def nutanix_project_id
-      client.project_id
-    end
-
-    def vm_ready(vm)
-      vm.wait_for do
-        vm.reload
-        vm.ready?
-      end
+    # Validate host before provisioning
+    def validate_host(host)
+      Rails.logger.info "=== NUTANIX: VALIDATE_HOST CALLED for host: #{host.name} ==="
+      super
     end
 
     private
 
     def client
-      Rails.logger.info 'GCE::client'
-      @client ||= ForemanNutanix::NutanixComputeAdapter.new(cluster)
-    end
-
-    def set_vm_volumes_attributes(vm, vm_attrs)
-      return vm_attrs unless vm.respond_to?(:volumes)
-
-      vm_attrs[:volumes_attributes] = Hash[vm.volumes.each_with_index.map { |volume, idx| [idx.to_s, volume.to_h] }]
-
-      vm_attrs
-    end
-
-    def find_os_image(uuid)
-      os_image = images.find_by(uuid: uuid)
-      gce_image = client.image(uuid.to_i)
-
-      raise ::Foreman::Exception, N_('Missing an image for operating system!') if os_image.nil?
-      if gce_image.nil?
-        raise ::Foreman::Exception, N_("GCE image [#{uuid.to_i}] for #{os_image.name} image not found in the cloud!")
-      end
-
-      os_image
+      Rails.logger.info "=== NUTANIX: Creating client for cluster #{cluster} ==="
+      @client ||= NutanixAdapter.new(cluster)
     end
   end
 end
-# rubocop:enable Rails/InverseOf, Metrics/ClassLength

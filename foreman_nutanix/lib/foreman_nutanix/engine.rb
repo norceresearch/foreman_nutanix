@@ -10,30 +10,38 @@ module ForemanNutanix
       end
     end
 
+    # Register the plugin with Foreman
     initializer 'foreman_nutanix.register_plugin', before: :finisher_hook do |_app|
       Foreman::Plugin.register :foreman_nutanix do
-        requires_foreman '>= 3.13.0'
+        requires_foreman '>= 3.14.0'
         register_gettext
 
+        # Register the compute resource
         in_to_prepare do
           compute_resource(ForemanNutanix::GCE)
         end
       end
     end
 
-    # Include concerns in this config.to_prepare block
+    # Include extensions after all frameworks are loaded
     config.to_prepare do
-      ::Host::Managed.include ForemanNutanix::HostManagedExtensions
-
+      Rails.logger.info "ForemanNutanix: Loading extensions"
+      
+      # Include controller extensions
+      require_dependency 'foreman_nutanix/api/v2/compute_resources_extensions'
+      
+      # Include API extensions
       ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ComputeResourcesExtensions
       ::Api::V2::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
-
       ::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
-
-      ::Api::V2::HostsController.include ForemanNutanix::Api::V2::HostsController
-      # Nutanix::Cloud::Compute::V1::AttachedDisk.include NutanixExtensions::AttachedDisk
+      
+      # Include host extensions
+      ::Host::Managed.include ForemanNutanix::HostManagedExtensions
+      
+      Rails.logger.info "ForemanNutanix: Extensions loaded successfully"
     rescue StandardError => e
-      Rails.logger.warn "ForemanNutanix: skipping engine hook (#{e})"
+      Rails.logger.warn "ForemanNutanix: Error loading extensions: #{e.message}"
+      Rails.logger.warn e.backtrace.join("\n")
     end
 
     rake_tasks do

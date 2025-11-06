@@ -1,7 +1,10 @@
-<%= select_f f,
-:cluster,
-@compute_resource.available_clusters,
-:ext_id,
-:name,
-{},
-{ label: _("Cluster") } %>
+<%= javascript 'foreman_nutanix', 'compute_resource' %>
+
+<%= text_f f, :name, :help_inline => _("Name of the compute resource") %>
+<%= text_f f, :description, :help_inline => _("Description of the compute resource") %>
+
+<%= select_f f, :cluster,
+    @compute_resource.available_clusters,
+    :ext_id, :name,
+    { :include_blank => _("Select Cluster") },
+    { :help_inline => _("Nutanix cluster to use"), :label => _("Cluster") } %>
