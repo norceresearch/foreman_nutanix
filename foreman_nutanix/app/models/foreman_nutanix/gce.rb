@@ -97,6 +97,7 @@ module ForemanNutanix
     def new_vm(attr = {})
       Rails.logger.info "=== NUTANIX: NEW_VM CALLED with attr: #{attr} ==="
       vm_attrs = vm_instance_defaults.merge(attr.to_hash.deep_symbolize_keys)
+      vm_attrs = normalize_vm_attrs(vm_attrs)
       Rails.logger.info "=== NUTANIX: NEW_VM merged attrs: #{vm_attrs} ==="
       
       # Use the Foreman pattern - client.servers.new returns our VM model
@@ -108,8 +109,22 @@ module ForemanNutanix
       Rails.logger.info "=== NUTANIX: VM_INSTANCE_DEFAULTS called ==="
       {
         zone: 'default-zone',
-        machine_type: 'small'
+        machine_type: 'small',
+        cpus: 2,
+        memory: 4
       }
+    end
+
+    # Normalize VM attributes from form
+    def normalize_vm_attrs(vm_attrs)
+      Rails.logger.info "=== NUTANIX: NORMALIZE_VM_ATTRS called with: #{vm_attrs} ==="
+      normalized = vm_attrs.dup
+      
+      # Convert string numbers to integers
+      normalized[:cpus] = normalized[:cpus].to_i if normalized[:cpus]
+      normalized[:memory] = normalized[:memory].to_i if normalized[:memory]
+      
+      normalized
     end
 
     # Find existing VM by UUID

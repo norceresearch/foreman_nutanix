@@ -1,26 +1,26 @@
 <%= compute_specific_js(compute_resource, "host_edit") %>
 <%= javascript "hosts", "host_edit", "host_edit_interfaces" %>
 
-<div class="children_fields">
-  <div class="fields">
-    <%= text_f f, :name, :label => _('VM Name'), :help_inline => _('Name of the virtual machine') %>
+<%= select_f f, :image_id,
+    compute_resource.available_images,
+    :id, :name,
+    { :include_blank => _('Select Image') },
+    { :label => _('Image'), :help_inline => _('Operating system image to use') } %>
     
-    <%= select_f f, :image_id,
-        compute_resource.available_images,
-        :id, :name,
-        { :include_blank => _('Select Image') },
-        { :label => _('Image'), :help_inline => _('Operating system image to use') } %>
-        
-    <%= select_f f, :flavor_id,
-        compute_resource.available_flavors,
-        :id, :name,
-        { :include_blank => _('Select Flavor') },
-        { :label => _('Flavor'), :help_inline => _('VM size (CPU, Memory)') } %>
-        
-    <%= select_f f, :network_id,
-        compute_resource.available_networks,
-        :id, :name,
-        { :include_blank => _('Select Network') },
-        { :label => _('Network'), :help_inline => _('Network to attach the VM to') } %>
-  </div>
-</div>
+<%= select_f f, :machine_type,
+    compute_resource.available_flavors,
+    :id, :name,
+    { :include_blank => _('Select Flavor') },
+    { :label => _('Machine Type'), :help_inline => _('VM size template') } %>
+
+<%= counter_f f, :cpus,
+    { :label => _('CPUs'), 
+      :help_inline => _('Number of CPU cores'),
+      :min => 1,
+      :max => 32 } %>
+
+<%= counter_f f, :memory,
+    { :label => _('Memory (GB)'), 
+      :help_inline => _('Amount of memory in GB'),
+      :min => 1,
+      :max => 64 } %>

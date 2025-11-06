@@ -1,7 +1,7 @@
 module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :cluster, :args
-    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip
+    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -15,6 +15,8 @@ module ForemanNutanix
       @network = args[:network] || args[:network_id] || 'default-network'
       @image_id = args[:image_id]
       @associate_external_ip = args[:associate_external_ip] || true
+      @cpus = args[:cpus] || 2
+      @memory = args[:memory] || 4
       @persisted = false
     end
 
@@ -67,13 +69,13 @@ module ForemanNutanix
     # Required by Foreman - CPU count
     def cpu
       Rails.logger.info "=== NUTANIX: NutanixCompute::cpu called ==="
-      '2'
+      @cpus.to_s
     end
 
     # Required by Foreman - memory in GB
     def memory
       Rails.logger.info "=== NUTANIX: NutanixCompute::memory called ==="
-      4
+      @memory
     end
 
     # Required by Foreman - string representation
@@ -115,16 +117,7 @@ module ForemanNutanix
     # Required by Foreman - pretty machine type
     def pretty_machine_type
       Rails.logger.info "=== NUTANIX: NutanixCompute::pretty_machine_type called ==="
-      case @machine_type
-      when 'small'
-        'Small (2 CPU, 4GB RAM)'
-      when 'medium'
-        'Medium (4 CPU, 8GB RAM)'
-      when 'large'
-        'Large (8 CPU, 16GB RAM)'
-      else
-        @machine_type
-      end
+      "#{@cpus} CPUs, #{memory}GB RAM"
     end
 
     # Required by Foreman - volumes/disks
