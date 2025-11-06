@@ -1,8 +1,15 @@
 # rubocop:disable Rails/InverseOf, Metrics/ClassLength
 module ForemanNutanix
-  class GCE < ::ComputeResource
+  class GCE < ComputeResource
     has_one :key_pair, foreign_key: :compute_resource_id, dependent: :destroy
     validates :cluster, presence: true
+
+    after_initialize :init_client
+    after_find :init_client
+
+    def init_client(args = {})
+      Rails.logger.info "GCE::init_client #{args} self=#{self} "
+    end
 
     def self.available?
       true
@@ -73,7 +80,7 @@ module ForemanNutanix
     alias_method :available_flavors, :machine_types
 
     def _new_vm(args = {})
-      Rails.logger.info("new_vm w/ args: #{args} and cluster: #{cluster}")
+      Rails.logger.info("GCE::new_vm w/ args: #{args} and cluster: #{cluster}")
 
       # Todo
       # vm_args = args.deep_symbolize_keys
@@ -82,10 +89,10 @@ module ForemanNutanix
       # volumes_nested_attrs = vm_args.delete(:volumes_attributes)
       # vm_args[:volumes] = nested_attributes_for(:volumes, volumes_nested_attrs) if volumes_nested_attrs
 
-      NutanixCompute.new(cluster: cluster, args: args)
+      # NutanixCompute.new(cluster: cluster, args: args)
     end
 
-    def create_vm(args = {})
+    def create_vm(args)
       Rails.logger.info("create_vm w/ args: #{args}")
       # ssh_args = { username: find_os_image(args[:image_id])&.username, public_key: key_pair.public }
       # vm = new_vm(args.merge(ssh_args))

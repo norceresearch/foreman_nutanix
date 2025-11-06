@@ -13,7 +13,8 @@ module ForemanNutanix
     end
 
     def ready?
-      status == 'RUNNING'
+      false
+      # status == 'RUNNING'
     end
 
     def reload
@@ -25,16 +26,21 @@ module ForemanNutanix
     # @returns [String] one of PROVISIONING, STAGING, RUNNING, STOPPING, SUSPENDING, SUSPENDED, REPAIRING, and TERMINATED
     # if nil, instance is not persisted as VM on GCE
     def status
-      persisted? && @instance.status
+      # persisted? && @instance.status
+      nil
     end
     alias_method :state, :status
 
-    def start
-      Rails.logger.info 'NutanixCompute::start'
+    def start(args = {})
+      Rails.logger.info "NutanixCompute::start args=#{args}"
     end
 
-    def stop
-      Rails.logger.info 'NutanixCompute::stop'
+    def stop(args = {})
+      Rails.logger.info "NutanixCompute::stop args=#{args}"
+    end
+
+    def cpu
+      '2.5'
     end
 
     def to_s

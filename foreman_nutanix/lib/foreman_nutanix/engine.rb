@@ -26,7 +26,6 @@ module ForemanNutanix
       ::Host::Managed.include ForemanNutanix::HostManagedExtensions
 
       ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ComputeResourcesExtensions
-      ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ApipieExtensions
       ::Api::V2::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
 
       ::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
