@@ -115,9 +115,16 @@ module ForemanNutanix
     # Find existing VM by UUID
     def find_vm_by_uuid(uuid)
       Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID CALLED with uuid: #{uuid} ==="
-      vm = NutanixCompute.new(cluster, { name: uuid })
+      vm = NutanixCompute.new(cluster, { name: uuid, identity: uuid })
+      vm.instance_variable_set(:@persisted, true) # Mark as persisted since we're "finding" it
       Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID returning VM: #{vm} ==="
       vm
+    end
+
+    # Foreman might call ready? on the compute resource
+    def ready?
+      Rails.logger.info "=== NUTANIX: GCE::ready? called ==="
+      true
     end
 
     # Destroy VM
