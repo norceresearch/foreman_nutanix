@@ -4,6 +4,10 @@ module ForemanNutanix
       @cluster_id = cluster_id
     end
 
+    def servers
+      ForemanNutanix::NutanixCompute
+    end
+
     def project_id
       'project-id-here'
     end

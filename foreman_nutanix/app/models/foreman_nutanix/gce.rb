@@ -72,7 +72,7 @@ module ForemanNutanix
     end
     alias_method :available_flavors, :machine_types
 
-    def new_vm(args = {})
+    def _new_vm(args = {})
       Rails.logger.info("new_vm w/ args: #{args} and cluster: #{cluster}")
 
       # Todo
@@ -176,6 +176,7 @@ module ForemanNutanix
     private
 
     def client
+      Rails.logger.info 'GCE::client'
       @client ||= ForemanNutanix::NutanixComputeAdapter.new(cluster)
     end
 
