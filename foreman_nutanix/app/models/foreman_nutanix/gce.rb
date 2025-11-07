@@ -2,6 +2,10 @@ module ForemanNutanix
   class GCE < ComputeResource
     validates :cluster, presence: true
 
+    def self.model_name
+      ComputeResource.model_name
+    end
+
     def self.provider_friendly_name
       'Nutanix'
     end
