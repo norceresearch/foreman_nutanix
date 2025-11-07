@@ -26,6 +26,10 @@ module ForemanNutanix
       url
     end
 
+    def cluster_details
+      available_clusters.find { |cluster| cluster.ext_id == self.cluster }
+    end
+
     def to_label
       "#{name} (#{provider_friendly_name})"
     end
@@ -179,6 +183,15 @@ module ForemanNutanix
     def new_volume(attrs = {})
       Rails.logger.info "=== NUTANIX: NEW_VOLUME CALLED with attrs: #{attrs} ==="
       OpenStruct.new(attrs)
+    end
+
+    # List all VMs
+    def vms(attrs = {})
+      Rails.logger.info "=== NUTANIX: VMS CALLED with attrs: #{attrs} ==="
+      client.servers(attrs)
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: VMS ERROR: #{e.message} ==="
+      raise e
     end
 
     # Host attributes for VM creation

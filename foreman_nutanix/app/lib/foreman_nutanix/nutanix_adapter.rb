@@ -6,8 +6,8 @@ module ForemanNutanix
     end
 
     # Required by Foreman - returns a collection of servers
-    def servers
-      Rails.logger.info "=== NUTANIX: NutanixAdapter::servers called ==="
+    def servers(attrs = {})
+      Rails.logger.info "=== NUTANIX: NutanixAdapter::servers called with attrs: #{attrs} ==="
       ServersCollection.new(@cluster)
     end
 
@@ -29,10 +29,18 @@ module ForemanNutanix
         NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
       end
 
-      def all
-        Rails.logger.info "=== NUTANIX: ServersCollection::all called ==="
-        # Return empty array for now
-        []
+      def all(opts = {})
+        Rails.logger.info "=== NUTANIX: ServersCollection::all called with opts: #{opts} ==="
+        # Return a sample VM for testing
+        # In production, this would fetch actual VMs from Nutanix API
+        vm = NutanixCompute.new(@cluster, { 
+          identity: 'test-vm-1', 
+          name: 'test-vm-1',
+          machine_type: 'small'
+        })
+        # Mark as persisted so it shows as 'running'
+        vm.instance_variable_set(:@persisted, true)
+        [vm]
       end
     end
   end

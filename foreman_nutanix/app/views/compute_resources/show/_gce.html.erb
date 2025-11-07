@@ -22,11 +22,11 @@
   </tr>
   <tr>
     <td>Capabilities</td>
-    <td><%= @compute_resource.capabilities.join(', ') %></td>
+    <td><%= @compute_resource.capabilities.join(", ") %></td>
   </tr>
   <tr>
-    <td>Cluster URL</td>
-    <td><%= @compute_resource.cluster || 'Not set' %></td>
+    <td>Cluster ID</td>
+    <td><%= @compute_resource.cluster || "Not set" %></td>
   </tr>
 </table>
 
@@ -36,7 +36,8 @@
     <h5>Networks</h5>
     <ul>
       <% @compute_resource.available_networks.each do |network| %>
-        <li><%= network.name %> (<%= network.id %>)</li>
+        <li><%= network.name %>
+          (<%= network.id %>)</li>
       <% end %>
     </ul>
   </div>
@@ -44,7 +45,8 @@
     <h5>Flavors</h5>
     <ul>
       <% @compute_resource.available_flavors.each do |flavor| %>
-        <li><%= flavor.name %> (<%= flavor.id %>)</li>
+        <li><%= flavor.name %>
+          (<%= flavor.id %>)</li>
       <% end %>
     </ul>
   </div>
@@ -52,7 +54,8 @@
     <h5>Images</h5>
     <ul>
       <% @compute_resource.available_images.each do |image| %>
-        <li><%= image.name %> (<%= image.id %>)</li>
+        <li><%= image.name %>
+          (<%= image.id %>)</li>
       <% end %>
     </ul>
   </div>
