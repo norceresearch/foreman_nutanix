@@ -25,20 +25,20 @@ module ForemanNutanix
 
     # Include extensions after all frameworks are loaded
     config.to_prepare do
-      Rails.logger.info "ForemanNutanix: Loading extensions"
-      
+      Rails.logger.info 'ForemanNutanix: Loading extensions'
+
       # Include controller extensions
-      require_dependency 'foreman_nutanix/api/v2/compute_resources_extensions'
-      
+      # require_dependency 'foreman_nutanix/api/v2/compute_resources_extensions'
+
       # Include API extensions
       ::Api::V2::ComputeResourcesController.include ForemanNutanix::Api::V2::ComputeResourcesExtensions
       ::Api::V2::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
       ::ComputeResourcesController.include Foreman::Controller::Parameters::ComputeResourceExtension
-      
+
       # Include host extensions
       ::Host::Managed.include ForemanNutanix::HostManagedExtensions
-      
-      Rails.logger.info "ForemanNutanix: Extensions loaded successfully"
+
+      Rails.logger.info 'ForemanNutanix: Extensions loaded successfully'
     rescue StandardError => e
       Rails.logger.warn "ForemanNutanix: Error loading extensions: #{e.message}"
       Rails.logger.warn e.backtrace.join("\n")
@@ -51,3 +51,4 @@ module ForemanNutanix
     end
   end
 end
+

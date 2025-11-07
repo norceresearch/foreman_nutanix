@@ -31,7 +31,7 @@ module ForemanNutanix
     end
 
     # Test connection to the compute resource
-    def test_connection(options = {})
+    def test_connection(_options = {})
       Rails.logger.info "=== NUTANIX: Testing connection to cluster #{cluster} ==="
       true
     end
@@ -54,7 +54,7 @@ module ForemanNutanix
 
     # Available networks for VMs
     def available_networks(_cluster_id = nil)
-      Rails.logger.info "=== NUTANIX: Returning available networks ==="
+      Rails.logger.info '=== NUTANIX: Returning available networks ==='
       [OpenStruct.new({ id: 'default-network', name: 'Default Network' })]
     end
 
@@ -66,26 +66,26 @@ module ForemanNutanix
 
     # Available machine types/flavors
     def available_flavors
-      Rails.logger.info "=== NUTANIX: Returning available flavors ==="
+      Rails.logger.info '=== NUTANIX: Returning available flavors ==='
       [OpenStruct.new({ id: 'small', name: 'Small (2 CPU, 4GB RAM)' })]
     end
     alias_method :machine_types, :available_flavors
 
     # Available images
     def available_images(_opts = {})
-      Rails.logger.info "=== NUTANIX: Returning available images ==="
+      Rails.logger.info '=== NUTANIX: Returning available images ==='
       [OpenStruct.new({ id: 'centos-7', name: 'CentOS 7' })]
     end
 
     # Core provisioning method - this is what Foreman calls to create a VM
     def create_vm(args = {})
       Rails.logger.info "=== NUTANIX: CREATE_VM CALLED with args: #{args} ==="
-      Rails.logger.info "=== NUTANIX: CREATE_VM caller: #{caller_locations(1,3).join(', ')} ==="
-      
+      Rails.logger.info "=== NUTANIX: CREATE_VM caller: #{caller_locations(1, 3).join(', ')} ==="
+
       vm = new_vm(args)
-      Rails.logger.info "=== NUTANIX: CREATE_VM calling vm.save ==="
+      Rails.logger.info '=== NUTANIX: CREATE_VM calling vm.save ==='
       vm.save
-      
+
       Rails.logger.info "=== NUTANIX: CREATE_VM returning VM: #{vm} ==="
       find_vm_by_uuid(vm.identity)
     rescue StandardError => e
@@ -99,19 +99,19 @@ module ForemanNutanix
       vm_attrs = vm_instance_defaults.merge(attr.to_hash.deep_symbolize_keys)
       vm_attrs = normalize_vm_attrs(vm_attrs)
       Rails.logger.info "=== NUTANIX: NEW_VM merged attrs: #{vm_attrs} ==="
-      
+
       # Use the Foreman pattern - client.servers.new returns our VM model
       client.servers.new(vm_attrs)
     end
 
     # Default attributes for new VMs
     def vm_instance_defaults
-      Rails.logger.info "=== NUTANIX: VM_INSTANCE_DEFAULTS called ==="
+      Rails.logger.info '=== NUTANIX: VM_INSTANCE_DEFAULTS called ==='
       {
         zone: 'default-zone',
         machine_type: 'small',
         cpus: 2,
-        memory: 4
+        memory: 4,
       }
     end
 
@@ -119,11 +119,11 @@ module ForemanNutanix
     def normalize_vm_attrs(vm_attrs)
       Rails.logger.info "=== NUTANIX: NORMALIZE_VM_ATTRS called with: #{vm_attrs} ==="
       normalized = vm_attrs.dup
-      
+
       # Convert string numbers to integers
       normalized[:cpus] = normalized[:cpus].to_i if normalized[:cpus]
       normalized[:memory] = normalized[:memory].to_i if normalized[:memory]
-      
+
       normalized
     end
 
@@ -138,7 +138,7 @@ module ForemanNutanix
 
     # Foreman might call ready? on the compute resource
     def ready?
-      Rails.logger.info "=== NUTANIX: GCE::ready? called ==="
+      Rails.logger.info '=== NUTANIX: GCE::ready? called ==='
       true
     end
 
