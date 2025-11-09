@@ -9,19 +9,12 @@ Gem::Specification.new do |s|
   s.authors     = ['The Foreman Team']
   s.email       = ['dev@community.theforeman.org']
   s.homepage    = 'https://gitlab.intra.norceresearch.no/norce-it/foreman'
-  s.summary     = 'nutanix Compute Engine plugin for the Foreman'
-  s.description = 'nutanix Compute Engine plugin for the Foreman'
+  s.summary     = 'Nutanix plugin for Foreman'
+  s.description = 'Nutanix compute resource plugin for Foreman'
   s.required_ruby_version = '>= 2.7', '< 4'
 
   s.files = Dir['{app,config,db,lib,locale,webpack}/**/*'] + ['LICENSE', 'Rakefile', 'README.md', 'package.json']
   s.test_files = Dir['test/**/*'] + Dir['webpack/**/__tests__/*.js']
-
-  # Pin nutanix versions to avoid breaking changes
-  # Never versions with nutanix-protobuf > 3.25.4
-  # are failing with `undefined method 'build'` error
-  s.add_dependency 'google-apis-compute_v1', '0.54.0'
-  s.add_dependency 'google-cloud-compute', '0.5.0'
-  s.add_dependency 'google-protobuf', '3.24.3'
 
   s.add_dependency 'foreman-tasks', '>=5.0'
 

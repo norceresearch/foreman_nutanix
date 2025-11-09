@@ -18,7 +18,7 @@ module ForemanNutanix
 
         # Register the compute resource
         in_to_prepare do
-          compute_resource(ForemanNutanix::GCE)
+          compute_resource(ForemanNutanix::Nutanix)
         end
       end
     end

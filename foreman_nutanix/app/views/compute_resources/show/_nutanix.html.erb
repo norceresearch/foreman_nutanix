@@ -1,0 +1,62 @@
+<h4>Cluster Information</h4>
+<table class="table table-striped table-condensed">
+  <% if @compute_resource.cluster_details %>
+    <% @compute_resource.cluster_details.to_h.each do |key, value| %>
+      <tr>
+        <td><%= key %></td>
+        <td><%= value %></td>
+      </tr>
+    <% end %>
+  <% else %>
+    <tr>
+      <td colspan="2">No cluster details available</td>
+    </tr>
+  <% end %>
+</table>
+
+<h4>Debug Information</h4>
+<table class="table table-striped table-condensed">
+  <tr>
+    <td>Provider</td>
+    <td><%= @compute_resource.provider_friendly_name %></td>
+  </tr>
+  <tr>
+    <td>Capabilities</td>
+    <td><%= @compute_resource.capabilities.join(", ") %></td>
+  </tr>
+  <tr>
+    <td>Cluster ID</td>
+    <td><%= @compute_resource.cluster || "Not set" %></td>
+  </tr>
+</table>
+
+<h4>Available Resources</h4>
+<div class="row">
+  <div class="col-md-4">
+    <h5>Networks</h5>
+    <ul>
+      <% @compute_resource.available_networks.each do |network| %>
+        <li><%= network.name %>
+          (<%= network.id %>)</li>
+      <% end %>
+    </ul>
+  </div>
+  <div class="col-md-4">
+    <h5>Flavors</h5>
+    <ul>
+      <% @compute_resource.available_flavors.each do |flavor| %>
+        <li><%= flavor.name %>
+          (<%= flavor.id %>)</li>
+      <% end %>
+    </ul>
+  </div>
+  <div class="col-md-4">
+    <h5>Images</h5>
+    <ul>
+      <% @compute_resource.available_images.each do |image| %>
+        <li><%= image.name %>
+          (<%= image.id %>)</li>
+      <% end %>
+    </ul>
+  </div>
+</div>
