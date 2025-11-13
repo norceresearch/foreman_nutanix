@@ -19,19 +19,19 @@ msgstr ""
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:9
-msgid "Certificate path, for GCE only"
+msgid "Certificate path, for Nutanix only"
 msgstr ""
 
 #: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:10
-msgid "Zone, for GCE only"
+msgid "Zone, for nutanix only"
 msgstr ""
 
 #: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:11
-msgid "Deprecated, project is automatically loaded from the JSON file. For GCE only"
+msgid "Deprecated, project is automatically loaded from the JSON file. For nutanix only"
 msgstr ""
 
 #: ../app/controllers/foreman_nutanix/api/v2/apipie_extensions.rb:12
-msgid "Deprecated, email is automatically loaded from the JSON file. For GCE only"
+msgid "Deprecated, email is automatically loaded from the JSON file. For nutanix only"
 msgstr ""
 
 #: ../app/controllers/foreman_nutanix/api/v2/compute_resources_extensions.rb:25
@@ -46,83 +46,83 @@ msgid ""
 "ON file"
 msgstr ""
 
-#: ../app/models/foreman_nutanix/gce.rb:128
+#: ../app/models/foreman_nutanix/nutanix.rb:128
 msgid "console is not available at this time because the instance is powered off"
 msgstr ""
 
-#: ../app/models/foreman_nutanix/gce.rb:172
+#: ../app/models/foreman_nutanix/nutanix.rb:172
 msgid "Missing an image for operating system!"
 msgstr ""
 
-#: ../app/views/compute_resources/form/_gce.html.erb:3
+#: ../app/views/compute_resources/form/_nutanix.html.erb:3
 msgid "JSON key"
 msgstr ""
 
-#: ../app/views/compute_resources/form/_gce.html.erb:9
-#: ../app/views/compute_resources_vms/show/_gce.html.erb:11
+#: ../app/views/compute_resources/form/_nutanix.html.erb:9
+#: ../app/views/compute_resources_vms/show/_nutanix.html.erb:11
 msgid "Zone"
 msgstr ""
 
-#: ../app/views/compute_resources/form/_gce.html.erb:10
+#: ../app/views/compute_resources/form/_nutanix.html.erb:10
 msgid "Load Zones"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:3
+#: ../app/views/compute_resources_vms/form/nutanix/_base.html.erb:3
 msgid "Machine type"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:12
+#: ../app/views/compute_resources_vms/form/nutanix/_base.html.erb:12
 msgid "Please select an image"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:13
-#: ../app/views/compute_resources_vms/show/_gce.html.erb:18
+#: ../app/views/compute_resources_vms/form/nutanix/_base.html.erb:13
+#: ../app/views/compute_resources_vms/show/_nutanix.html.erb:18
 msgid "Image"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:17
+#: ../app/views/compute_resources_vms/form/nutanix/_base.html.erb:17
 msgid "Network"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_base.html.erb:18
+#: ../app/views/compute_resources_vms/form/nutanix/_base.html.erb:18
 msgid "Associate Ephemeral External IP"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/gce/_volume.html.erb:5
+#: ../app/views/compute_resources_vms/form/nutanix/_volume.html.erb:5
 msgid "Size (GB)"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/index/_gce.html.erb:3
+#: ../app/views/compute_resources_vms/index/_nutanix.html.erb:3
 msgid "Name"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/index/_gce.html.erb:4
+#: ../app/views/compute_resources_vms/index/_nutanix.html.erb:4
 msgid "Type"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/index/_gce.html.erb:5
+#: ../app/views/compute_resources_vms/index/_nutanix.html.erb:5
 msgid "State"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/index/_gce.html.erb:6
+#: ../app/views/compute_resources_vms/index/_nutanix.html.erb:6
 msgid "Actions"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/show/_gce.html.erb:6
+#: ../app/views/compute_resources_vms/show/_nutanix.html.erb:6
 msgid "Properties"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/show/_gce.html.erb:10
+#: ../app/views/compute_resources_vms/show/_nutanix.html.erb:10
 msgid "Machine Type"
 msgstr ""
 
-#: ../app/views/images/form/_gce.html.erb:1
+#: ../app/views/images/form/_nutanix.html.erb:1
 msgid ""
 "The user that is used to ssh into the instance, normally cloud-user, ec2-user,"
 " ubuntu, etc. Note: nutanix engine doesn't support SSH for the root user."
 msgstr ""
 
-#: ../app/views/images/form/_gce.html.erb:3
+#: ../app/views/images/form/_nutanix.html.erb:3
 msgid "Does this image support user data input (e.g. via cloud-init)?"
 msgstr ""
 

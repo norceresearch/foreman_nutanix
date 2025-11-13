@@ -20,10 +20,10 @@ locales["foreman_nutanix"]["en"] = {
       },
       Actions: [""],
       "Associate Ephemeral External IP": [""],
-      "Certificate path, for GCE only": [""],
-      "Deprecated, email is automatically loaded from the JSON file. For GCE only":
+      "Certificate path, for Nutanix only": [""],
+      "Deprecated, email is automatically loaded from the JSON file. For Nutanix only":
         [""],
-      "Deprecated, project is automatically loaded from the JSON file. For GCE only":
+      "Deprecated, project is automatically loaded from the JSON file. For Nutanix only":
         [""],
       "Does this image support user data input (e.g. via cloud-init)?": [""],
       "nutanix Compute Engine plugin for the Foreman.": [""],
@@ -47,7 +47,7 @@ locales["foreman_nutanix"]["en"] = {
         [""],
       Type: [""],
       Zone: [""],
-      "Zone, for GCE only": [""],
+      "Zone, for Nutanix only": [""],
       "console is not available at this time because the instance is powered off":
         [""],
     },

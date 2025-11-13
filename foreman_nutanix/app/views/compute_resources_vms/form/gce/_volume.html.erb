@@ -1,5 +1,0 @@
-<%
-  # For backwards compatibility, Fog has :size_gb, Nutanix has :disk_size_gb
-  field_name = f.object.class == Nutanix::Cloud::Compute::V1::AttachedDisk ? :disk_size_gb : :size_gb
-%>
-<%= text_f f, field_name, class: "col-md-2", label: _("Size (GB)"), label_size: "col-md-2", onchange: 'tfm.computeResource.capacityEdit(this)' %>
