@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import datetime
 import dataclasses
+import enum
 from typing import Self, cast
 import ntnx_vmm_py_client as vmm
 
@@ -53,6 +54,53 @@ class VirtualMachineMgmt:
         resp: vmm.ListImagesApiResponse = self.images_api.list_images(_limit=100)  # type: ignore
         images: list[vmm.Image] = resp.data  # type: ignore
         return [ImageMetadata.from_nutanix_image(img) for img in images]
+
+    def get_vm_power_state(self, vm_ext_id: str) -> "VmPowerStateResponse":
+        """
+        Get the current power state of a VM.
+
+        Args:
+            vm_ext_id: The external ID of the VM
+
+        Returns:
+            VmPowerStateResponse with the current power state
+        """
+        resp: vmm.AhvConfigGetVmApiResponse = self.vms_api.get_vm_by_id(extId=vm_ext_id)  # type: ignore
+        vm: vmm.AhvConfigVm = resp.data  # type: ignore
+        power_state = str(vm.power_state) if vm.power_state else "UNDETERMINED"
+        return VmPowerStateResponse(
+            ext_id=vm_ext_id,
+            name=cast(str, vm.name),
+            power_state=power_state,
+        )
+
+    def set_vm_power_state(self, vm_ext_id: str, action: "PowerAction") -> "VmPowerStateResponse":
+        """
+        Change the power state of a VM.
+
+        Args:
+            vm_ext_id: The external ID of the VM
+            action: The power action to perform
+
+        Returns:
+            VmPowerStateResponse with the new power state
+        """
+        # Perform the requested power action
+        if action == PowerAction.POWER_ON:
+            self.vms_api.power_on_vm(extId=vm_ext_id)
+        elif action == PowerAction.POWER_OFF:
+            self.vms_api.power_off_vm(extId=vm_ext_id)
+        elif action == PowerAction.SHUTDOWN:
+            self.vms_api.shutdown_vm(extId=vm_ext_id)
+        elif action == PowerAction.REBOOT:
+            self.vms_api.reboot_vm(extId=vm_ext_id)
+        elif action == PowerAction.RESET:
+            self.vms_api.reset_vm(extId=vm_ext_id)
+        else:
+            raise ValueError(f"Unknown power action: {action}")
+
+        # Get updated power state
+        return self.get_vm_power_state(vm_ext_id)
 
     def provision_vm(self, request: "VmProvisionRequest") -> "VmMetadata":
         """
@@ -196,6 +244,55 @@ class VmMetadata:
     num_cores_per_socket: int
     memory_size_bytes: int
     disk_size_bytes: int
+
+
+class PowerAction(str, enum.Enum):
+    """
+    Available power actions for VMs.
+
+    - POWER_ON: Turn on the VM (hard power on)
+    - POWER_OFF: Turn off the VM (hard power off)
+    - SHUTDOWN: Gracefully shut down the VM
+    - REBOOT: Reboot the VM (hard reboot)
+    - RESET: Reset the VM (hard reset/power cycle)
+    """
+
+    POWER_ON = "POWER_ON"
+    POWER_OFF = "POWER_OFF"
+    SHUTDOWN = "SHUTDOWN"
+    REBOOT = "REBOOT"
+    RESET = "RESET"
+
+
+@dataclasses.dataclass
+class PowerStateChangeRequest:
+    """
+    Request model for changing VM power state.
+
+    Example:
+        {
+            "action": "POWER_ON"
+        }
+    """
+
+    action: PowerAction
+
+
+@dataclasses.dataclass(frozen=True)
+class VmPowerStateResponse:
+    """
+    Response model containing VM power state information.
+
+    Power states:
+    - ON: VM is powered on
+    - OFF: VM is powered off
+    - PAUSED: VM is paused
+    - UNDETERMINED: Power state cannot be determined
+    """
+
+    ext_id: str
+    name: str
+    power_state: str
 
 
 if __name__ == "__main__":

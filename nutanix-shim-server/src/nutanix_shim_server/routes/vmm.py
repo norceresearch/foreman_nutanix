@@ -5,6 +5,8 @@ from nutanix_shim_server.vmm import (
     ImageMetadata,
     VmProvisionRequest,
     VmMetadata,
+    PowerStateChangeRequest,
+    VmPowerStateResponse,
 )
 
 router = APIRouter(prefix="/api/v1/vmm", tags=["Virtual Machine Management (VMM)"])
@@ -55,3 +57,65 @@ def list_clusters(request: Request) -> list[ImageMetadata]:
 def provision_vm(request: Request, vm_request: VmProvisionRequest) -> VmMetadata:
     api: VirtualMachineMgmt = request.app.state.vmm
     return api.provision_vm(vm_request)
+
+
+@router.get(
+    "/vms/{vm_id}/power-state",
+    response_model=VmPowerStateResponse,
+    summary="Get VM power state",
+    description="""
+    Returns the current power state of a virtual machine.
+
+    Power states:
+    - **ON**: VM is powered on
+    - **OFF**: VM is powered off
+    - **PAUSED**: VM is paused
+    - **UNDETERMINED**: Power state cannot be determined
+
+    Example response:
+    ```json
+    {
+        "ext_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "my-vm-01",
+        "power_state": "ON"
+    }
+    ```
+    """,
+)
+def get_vm_power_state(request: Request, vm_id: str) -> VmPowerStateResponse:
+    api: VirtualMachineMgmt = request.app.state.vmm
+    return api.get_vm_power_state(vm_id)
+
+
+@router.post(
+    "/vms/{vm_id}/power-state",
+    response_model=VmPowerStateResponse,
+    summary="Change VM power state",
+    description="""
+    Change the power state of a virtual machine by performing a power action.
+
+    Available actions:
+    - **POWER_ON**: Turn on the VM (hard power on)
+    - **POWER_OFF**: Turn off the VM (hard power off - immediate)
+    - **SHUTDOWN**: Gracefully shut down the VM (requires guest tools)
+    - **REBOOT**: Reboot the VM (hard reboot - immediate)
+    - **RESET**: Reset the VM (hard reset/power cycle - immediate)
+
+    Example request:
+    ```json
+    {
+        "action": "POWER_ON"
+    }
+    ```
+
+    Returns the updated power state after the action completes.
+
+    Note: SHUTDOWN action requires Nutanix Guest Tools to be installed. If guest tools
+    are not available, use POWER_OFF instead.
+    """,
+)
+def set_vm_power_state(
+    request: Request, vm_id: str, power_request: PowerStateChangeRequest
+) -> VmPowerStateResponse:
+    api: VirtualMachineMgmt = request.app.state.vmm
+    return api.set_vm_power_state(vm_id, power_request.action)
