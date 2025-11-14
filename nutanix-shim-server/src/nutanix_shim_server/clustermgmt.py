@@ -43,9 +43,16 @@ class ClusterMgmt:
             )
         return self._storage_containers_api
 
-    def list_storage_containers(self):
-        containers = self.storage_containers_api.list_storage_containers()
-        return containers
+    def list_storage_containers(self) -> list[StorageContainerMetadata]:
+        """Return list of storage containers"""
+        resp: cm.ListStorageContainersApiResponse = self.storage_containers_api.list_storage_containers()
+        containers: None | list[cm.StorageContainer] = resp.data
+        if containers:
+            return [
+                StorageContainerMetadata.from_nutanix_storage_container(container)
+                for container in containers
+            ]
+        return []
 
     @property
     def clusters_api(self) -> cm.ClustersApi:
@@ -85,6 +92,42 @@ class ClusterMetadata:
             arch=cast(str, config.cluster_arch),
             vm_count=cast(int, cluster.vm_count),
             is_available=cast(bool, config.is_available),
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class StorageContainerMetadata:
+    """
+    Metadata about a storage container.
+
+    Includes container ID, name, capacity information, and storage features.
+    """
+
+    ext_id: str
+    name: str
+    cluster_name: None | str
+    cluster_ext_id: None | str
+    max_capacity_bytes: None | int
+    logical_advertised_capacity_bytes: None | int
+    replication_factor: None | int
+    is_compression_enabled: None | bool
+    is_encrypted: None | bool
+    is_marked_for_removal: None | bool
+
+    @classmethod
+    def from_nutanix_storage_container(cls, container: cm.StorageContainer) -> Self:
+        """Convert Nutanix SDK StorageContainer to our response model"""
+        return cls(
+            ext_id=cast(str, container.ext_id),
+            name=cast(str, container.name),
+            cluster_name=container.cluster_name,
+            cluster_ext_id=container.cluster_ext_id,
+            max_capacity_bytes=container.max_capacity_bytes,
+            logical_advertised_capacity_bytes=container.logical_advertised_capacity_bytes,
+            replication_factor=container.replication_factor,
+            is_compression_enabled=container.is_compression_enabled,
+            is_encrypted=container.is_encrypted,
+            is_marked_for_removal=container.is_marked_for_removal,
         )
 
 
