@@ -96,6 +96,7 @@ class ClusterMgmt:
         # Aggregate capacity from all hosts in the cluster
         total_cpu_capacity_hz = 0
         total_memory_capacity_bytes = 0
+        total_cpu_cores = 0
 
         if hosts:
             for host in hosts:
@@ -109,8 +110,11 @@ class ClusterMgmt:
                 if host.memory_size_bytes:
                     total_memory_capacity_bytes += host.memory_size_bytes
 
+                if host.number_of_cpu_cores:
+                    total_cpu_cores += host.number_of_cpu_cores
+
         return ClusterResourceStats.from_nutanix_cluster_stats(
-            stats, total_cpu_capacity_hz, total_memory_capacity_bytes
+            stats, total_cpu_capacity_hz, total_memory_capacity_bytes, total_cpu_cores
         )
 
 
@@ -187,6 +191,8 @@ class ClusterResourceStats:
     cpu_capacity_hz: int
     cpu_usage_hz: int
     cpu_usage_percent: float
+    cpu_cores_total: int
+    cpu_cores_usage: int
     # Memory stats
     memory_capacity_bytes: int
     memory_usage_bytes: int
@@ -202,14 +208,15 @@ class ClusterResourceStats:
         stats: cm.ClusterStats,
         cpu_capacity_hz: int = 0,
         memory_capacity_bytes: int = 0,
+        cpu_cores_total: int = 0,
     ) -> Self:
         """Convert Nutanix SDK ClusterStats to our response model
 
         Note: Stats from Nutanix API can be time-series (lists) or scalar values.
         We extract the latest/last value from lists if needed.
 
-        CPU and memory capacity are passed in separately since they must be
-        aggregated from cluster hosts (not available in ClusterStats).
+        CPU and memory capacity, and CPU cores are passed in separately since
+        they must be aggregated from cluster hosts (not available in ClusterStats).
         """
 
         def extract_value(val, field_name="unknown"):
@@ -243,6 +250,9 @@ class ClusterResourceStats:
         cpu_usage_hz = int(cpu_capacity_hz * (cpu_usage_ppm / 1_000_000)) if cpu_capacity_hz else 0
         cpu_usage_pct = (cpu_usage_hz / cpu_capacity_hz * 100) if cpu_capacity_hz else 0
 
+        # Estimate cores in use based on usage percentage
+        cpu_cores_usage = int(cpu_cores_total * (cpu_usage_pct / 100)) if cpu_cores_total else 0
+
         # Memory: overall_memory_usage_bytes from stats, capacity from aggregated hosts
         memory_usage = extract_value(stats.overall_memory_usage_bytes, "overall_memory_usage_bytes")
         memory_usage_pct = (memory_usage / memory_capacity_bytes * 100) if memory_capacity_bytes else 0
@@ -257,6 +267,8 @@ class ClusterResourceStats:
             cpu_capacity_hz=int(cpu_capacity_hz),
             cpu_usage_hz=int(cpu_usage_hz),
             cpu_usage_percent=round(cpu_usage_pct, 2),
+            cpu_cores_total=int(cpu_cores_total),
+            cpu_cores_usage=int(cpu_cores_usage),
             memory_capacity_bytes=int(memory_capacity_bytes),
             memory_usage_bytes=int(memory_usage),
             memory_usage_percent=round(memory_usage_pct, 2),

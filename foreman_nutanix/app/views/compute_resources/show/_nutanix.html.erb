@@ -133,9 +133,9 @@
     <tbody>
       <tr>
         <td><strong>CPU</strong></td>
-        <td><%= (stats.cpu_capacity_hz.to_f / 1_000_000_000).round(2) %> GHz</td>
-        <td><%= (stats.cpu_usage_hz.to_f / 1_000_000_000).round(2) %> GHz</td>
-        <td><%= ((stats.cpu_capacity_hz - stats.cpu_usage_hz).to_f / 1_000_000_000).round(2) %> GHz</td>
+        <td><%= (stats.cpu_capacity_hz.to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_total %> cores</td>
+        <td><%= (stats.cpu_usage_hz.to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_usage %> cores</td>
+        <td><%= ((stats.cpu_capacity_hz - stats.cpu_usage_hz).to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_total - stats.cpu_cores_usage %> cores</td>
         <td>
           <div class="progress" style="margin-bottom: 0;">
             <div class="progress-bar <%= stats.cpu_usage_percent > 80 ? 'progress-bar-danger' : stats.cpu_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
