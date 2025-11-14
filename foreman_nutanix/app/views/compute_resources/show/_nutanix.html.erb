@@ -27,8 +27,29 @@
     <td><%= @compute_resource.capabilities.join(", ") %></td>
   </tr>
   <tr>
+    <td>User Data Support</td>
+    <td><%= @compute_resource.user_data_supported? ? 'Yes' : 'No' %></td>
+  </tr>
+  <tr>
+    <td>Shim Server URL</td>
+    <td><code><%= @compute_resource.shim_server_url %></code></td>
+  </tr>
+  <tr>
     <td>Cluster ID</td>
-    <td><%= @compute_resource.cluster || "Not set" %></td>
+    <td><code><%= @compute_resource.cluster || "Not set" %></code></td>
+  </tr>
+  <tr>
+    <td>Cluster Name</td>
+    <td><%= @compute_resource.cluster_details&.name || "N/A" %></td>
+  </tr>
+  <tr>
+    <td>Resource Counts</td>
+    <td>
+      <strong>Networks:</strong> <%= @compute_resource.available_networks.count %> |
+      <strong>Storage Containers:</strong> <%= @compute_resource.available_storage_containers.count %> |
+      <strong>Images:</strong> <%= @compute_resource.available_images.count %> |
+      <strong>Flavors:</strong> <%= @compute_resource.available_flavors.count %>
+    </td>
   </tr>
 </table>
 

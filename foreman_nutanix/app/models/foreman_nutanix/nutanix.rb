@@ -34,6 +34,10 @@ module ForemanNutanix
       "#{name} (#{provider_friendly_name})"
     end
 
+    def shim_server_url
+      ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+    end
+
     def provided_attributes
       super.merge({ ip: :vm_ip_address })
     end
