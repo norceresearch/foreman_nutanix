@@ -32,16 +32,67 @@
 
 <h4>Available Resources</h4>
 <div class="row">
-  <div class="col-md-4">
+  <div class="col-md-6">
     <h5>Networks</h5>
-    <ul>
-      <% @compute_resource.available_networks.each do |network| %>
-        <li><%= network.name %>
-          (<%= network.id %>)</li>
-      <% end %>
-    </ul>
+    <table class="table table-striped table-condensed">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Subnet</th>
+          <th>Gateway</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @compute_resource.available_networks.each do |network| %>
+          <tr>
+            <td><%= network.name %></td>
+            <td><%= network.subnet_type %></td>
+            <td><%= network.ipv4_subnet %></td>
+            <td><%= network.ipv4_gateway %></td>
+          </tr>
+        <% end %>
+        <% if @compute_resource.available_networks.empty? %>
+          <tr>
+            <td colspan="4">No networks available</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-6">
+    <h5>Storage Containers</h5>
+    <table class="table table-striped table-condensed">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Capacity (GB)</th>
+          <th>Replication</th>
+          <th>Compression</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @compute_resource.available_storage_containers.each do |container| %>
+          <tr>
+            <td><%= container.name %></td>
+            <td><%= (container.max_capacity_bytes.to_f / 1024**3).round(2) %></td>
+            <td><%= container.replication_factor %>x</td>
+            <td><%= container.is_compression_enabled ? 'Yes' : 'No' %></td>
+          </tr>
+        <% end %>
+        <% if @compute_resource.available_storage_containers.empty? %>
+          <tr>
+            <td colspan="4">No storage containers available</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h4>Images & Flavors</h4>
+<div class="row">
+  <div class="col-md-6">
     <h5>Flavors</h5>
     <ul>
       <% @compute_resource.available_flavors.each do |flavor| %>
@@ -50,7 +101,7 @@
       <% end %>
     </ul>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-6">
     <h5>Images</h5>
     <ul>
       <% @compute_resource.available_images.each do |image| %>

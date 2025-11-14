@@ -65,6 +65,7 @@ class SubnetMetadata:
     subnet_type: None | str
     network_id: None | int
     cluster_name: None | str
+    cluster_ext_id: None | str
     ipv4_subnet: None | str  # CIDR notation (e.g., "10.0.0.0/24")
     ipv4_gateway: None | str
     dhcp_server_address: None | str
@@ -100,6 +101,13 @@ class SubnetMetadata:
                 if ipv4_config.dhcp_server_address:
                     dhcp_server_address = cast(str, ipv4_config.dhcp_server_address.value)
 
+        # Check if cluster_ext_id exists (it might be in cluster_reference)
+        cluster_ext_id = None
+        if hasattr(subnet, 'cluster_ext_id'):
+            cluster_ext_id = subnet.cluster_ext_id
+        elif hasattr(subnet, 'cluster_reference') and subnet.cluster_reference:
+            cluster_ext_id = subnet.cluster_reference.ext_id if hasattr(subnet.cluster_reference, 'ext_id') else None
+
         return cls(
             ext_id=cast(str, subnet.ext_id),
             name=cast(str, subnet.name),
@@ -107,6 +115,7 @@ class SubnetMetadata:
             subnet_type=str(subnet.subnet_type) if subnet.subnet_type else None,
             network_id=subnet.network_id,
             cluster_name=subnet.cluster_name,
+            cluster_ext_id=cluster_ext_id,
             ipv4_subnet=ipv4_subnet,
             ipv4_gateway=ipv4_gateway,
             dhcp_server_address=dhcp_server_address,

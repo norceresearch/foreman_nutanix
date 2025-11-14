@@ -62,14 +62,64 @@ module ForemanNutanix
 
     # Available networks for VMs
     def available_networks(_cluster_id = nil)
-      Rails.logger.info '=== NUTANIX: Returning available networks ==='
-      [OpenStruct.new({ id: 'default-network', name: 'Default Network' })]
+      Rails.logger.info '=== NUTANIX: Fetching available networks from shim server ==='
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/networking/list-networks")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+
+      # Filter networks by the cluster associated with this compute resource
+      cluster_ext_id = self.cluster
+      filtered_data = data.select { |network| network['cluster_ext_id'] == cluster_ext_id }
+
+      filtered_data.map do |network|
+        OpenStruct.new({
+          id: network['ext_id'],
+          ext_id: network['ext_id'],
+          name: network['name'],
+          subnet_type: network['subnet_type'],
+          cluster_name: network['cluster_name'],
+          ipv4_subnet: network['ipv4_subnet'],
+          ipv4_gateway: network['ipv4_gateway']
+        })
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching networks: #{e.message} ==="
+      []
     end
 
     # Networks method (alias for available_networks)
     def networks(opts = {})
       Rails.logger.info "=== NUTANIX: NETWORKS called with opts: #{opts} ==="
       available_networks
+    end
+
+    # Available storage containers for VMs
+    def available_storage_containers
+      Rails.logger.info '=== NUTANIX: Fetching available storage containers from shim server ==='
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-storage-containers")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+
+      # Filter storage containers by the cluster associated with this compute resource
+      cluster_ext_id = self.cluster
+      filtered_data = data.select { |container| container['cluster_ext_id'] == cluster_ext_id }
+
+      filtered_data.map do |container|
+        OpenStruct.new({
+          id: container['ext_id'],
+          ext_id: container['ext_id'],
+          name: container['name'],
+          cluster_name: container['cluster_name'],
+          max_capacity_bytes: container['max_capacity_bytes'],
+          replication_factor: container['replication_factor'],
+          is_compression_enabled: container['is_compression_enabled']
+        })
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching storage containers: #{e.message} ==="
+      []
     end
 
     # Available machine types/flavors
