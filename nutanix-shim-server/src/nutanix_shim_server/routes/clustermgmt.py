@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from nutanix_shim_server.clustermgmt import (
     ClusterMgmt,
     ClusterMetadata,
+    ClusterResourceStats,
     StorageContainerMetadata,
 )
 
@@ -16,6 +17,41 @@ router = APIRouter(prefix="/api/v1/clustermgmt", tags=["Cluster Management"])
 def list_clusters(request: Request) -> list[ClusterMetadata]:
     api: ClusterMgmt = request.app.state.clustermgmt
     return api.list_clusters()
+
+
+@router.get(
+    "/clusters/{cluster_id}/stats",
+    response_model=ClusterResourceStats,
+    summary="Get cluster resource statistics",
+    description="""
+    Returns resource usage statistics for a specific cluster.
+
+    Includes CPU, memory, and storage capacity and usage information with
+    calculated usage percentages.
+
+    Path Parameters:
+    - cluster_id: The external ID of the cluster
+
+    Example response:
+    ```json
+    {
+        "ext_id": "00061663-9fa0-28ca-185b-ac1f6b6f97e2",
+        "cpu_capacity_hz": 96000000000,
+        "cpu_usage_hz": 24000000000,
+        "cpu_usage_percent": 25.0,
+        "memory_capacity_bytes": 274877906944,
+        "memory_usage_bytes": 137438953472,
+        "memory_usage_percent": 50.0,
+        "storage_capacity_bytes": 10995116277760,
+        "storage_usage_bytes": 5497558138880,
+        "storage_usage_percent": 50.0
+    }
+    ```
+    """,
+)
+def get_cluster_stats(cluster_id: str, request: Request) -> ClusterResourceStats:
+    api: ClusterMgmt = request.app.state.clustermgmt
+    return api.get_cluster_stats(cluster_id)
 
 
 @router.get(

@@ -126,6 +126,23 @@ module ForemanNutanix
       []
     end
 
+    # Cluster resource statistics (CPU, memory, storage usage)
+    def cluster_resource_stats
+      Rails.logger.info '=== NUTANIX: Fetching cluster resource stats from shim server ==='
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      cluster_id = self.cluster
+      return nil unless cluster_id
+
+      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/clusters/#{cluster_id}/stats")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+
+      OpenStruct.new(data)
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching cluster stats: #{e.message} ==="
+      nil
+    end
+
     # Available machine types/flavors
     def available_flavors
       Rails.logger.info '=== NUTANIX: Returning available flavors ==='
