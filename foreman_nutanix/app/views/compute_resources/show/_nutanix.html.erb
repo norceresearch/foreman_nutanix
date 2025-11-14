@@ -130,11 +130,15 @@
   </div>
   <div class="col-md-6">
     <h5>Images</h5>
-    <ul>
-      <% @compute_resource.available_images.each do |image| %>
-        <li><%= image.name %>
-          (<%= image.id %>)</li>
-      <% end %>
-    </ul>
+    <% if @compute_resource.available_images.empty? %>
+      <p class="text-muted">No images available</p>
+    <% else %>
+      <ul>
+        <% @compute_resource.available_images.each do |image| %>
+          <li><%= image.name %>
+            (<%= image.id %>)</li>
+        <% end %>
+      </ul>
+    <% end %>
   </div>
 </div>

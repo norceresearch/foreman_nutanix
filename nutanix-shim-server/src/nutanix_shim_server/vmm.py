@@ -52,8 +52,10 @@ class VirtualMachineMgmt:
     def list_images(self) -> list[ImageMetadata]:
         # TODO: paginate
         resp: vmm.ListImagesApiResponse = self.images_api.list_images(_limit=100)  # type: ignore
-        images: list[vmm.Image] = resp.data  # type: ignore
-        return [ImageMetadata.from_nutanix_image(img) for img in images]
+        images: None | list[vmm.Image] = resp.data  # type: ignore
+        if images:
+            return [ImageMetadata.from_nutanix_image(img) for img in images]
+        return []
 
     def get_vm_power_state(self, vm_ext_id: str) -> "VmPowerStateResponse":
         """

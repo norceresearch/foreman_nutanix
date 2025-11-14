@@ -135,8 +135,37 @@ module ForemanNutanix
 
     # Available images
     def available_images(_opts = {})
-      Rails.logger.info '=== NUTANIX: Returning available images ==='
-      [OpenStruct.new({ id: 'centos-7', name: 'CentOS 7' })]
+      Rails.logger.info '=== NUTANIX: Fetching available images from shim server ==='
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/list-images")
+      response = Net::HTTP.get_response(uri)
+      data = JSON.parse(response.body)
+
+      # Filter images by cluster if cluster_location_ext_ids is available
+      cluster_ext_id = self.cluster
+      filtered_data = data.select do |image|
+        # Include image if it's available on this cluster
+        cluster_locations = image['cluster_location_ext_ids'] || []
+        cluster_locations.include?(cluster_ext_id)
+      end
+
+      filtered_data.map do |image|
+        # Convert size to GB for display
+        size_gb = image['size_bytes'] ? (image['size_bytes'].to_f / 1024**3).round(2) : 0
+        display_name = "#{image['name']} (#{size_gb} GB)"
+
+        OpenStruct.new({
+          id: image['ext_id'],
+          ext_id: image['ext_id'],
+          name: display_name,
+          description: image['description'],
+          size_bytes: image['size_bytes'],
+          type: image['type']
+        })
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching images: #{e.message} ==="
+      []
     end
 
     # Core provisioning method - this is what Foreman calls to create a VM
