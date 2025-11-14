@@ -57,6 +57,15 @@ class VirtualMachineMgmt:
             return [ImageMetadata.from_nutanix_image(img) for img in images]
         return []
 
+    def list_vms(self) -> list["VmListMetadata"]:
+        """List all VMs in the Nutanix environment"""
+        # TODO: paginate
+        resp: vmm.ListVmsApiResponse = self.vms_api.list_vms(_limit=100)  # type: ignore
+        vms: None | list[vmm.AhvConfigVm] = resp.data  # type: ignore
+        if vms:
+            return [VmListMetadata.from_nutanix_vm(vm) for vm in vms]
+        return []
+
     def get_vm_power_state(self, vm_ext_id: str) -> "VmPowerStateResponse":
         """
         Get the current power state of a VM.
@@ -201,6 +210,44 @@ class ImageMetadata:
     def from_nutanix_image(cls, image: vmm.Image) -> Self:
         kwargs = {k: v for k, v in image.to_dict().items() if k in cls.keys}
         return cls(**kwargs)
+
+
+@dataclasses.dataclass(frozen=True)
+class VmListMetadata:
+    """
+    Metadata for listing VMs.
+
+    Contains essential information about VMs for display in Foreman.
+    """
+
+    ext_id: str
+    name: str
+    cluster_ext_id: None | str
+    power_state: None | str
+    num_sockets: None | int
+    num_cores_per_socket: None | int
+    memory_size_bytes: None | int
+
+    @classmethod
+    def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
+        """Convert Nutanix SDK VM to our response model"""
+        # Extract cluster ext_id from cluster reference
+        cluster_ext_id = None
+        if hasattr(vm, "cluster") and vm.cluster:
+            cluster_ext_id = vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+
+        # Convert power state enum to string
+        power_state = str(vm.power_state) if vm.power_state else None
+
+        return cls(
+            ext_id=cast(str, vm.ext_id),
+            name=cast(str, vm.name),
+            cluster_ext_id=cluster_ext_id,
+            power_state=power_state,
+            num_sockets=vm.num_sockets,
+            num_cores_per_socket=vm.num_cores_per_socket,
+            memory_size_bytes=vm.memory_size_bytes,
+        )
 
 
 @dataclasses.dataclass

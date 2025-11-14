@@ -3,6 +3,7 @@ from fastapi import APIRouter, Request
 from nutanix_shim_server.vmm import (
     VirtualMachineMgmt,
     ImageMetadata,
+    VmListMetadata,
     VmProvisionRequest,
     VmMetadata,
     PowerStateChangeRequest,
@@ -19,6 +20,42 @@ router = APIRouter(prefix="/api/v1/vmm", tags=["Virtual Machine Management (VMM)
 def list_clusters(request: Request) -> list[ImageMetadata]:
     api: VirtualMachineMgmt = request.app.state.vmm
     return api.list_images()
+
+
+@router.get(
+    "/list-vms",
+    response_model=list[VmListMetadata],
+    summary="List all virtual machines",
+    description="""
+    Returns a list of all VMs in the Nutanix environment.
+
+    Each VM entry includes:
+    - External ID (ext_id) - unique identifier
+    - Name
+    - Cluster association (cluster_ext_id)
+    - Power state (ON, OFF, PAUSED, etc.)
+    - CPU configuration (sockets and cores per socket)
+    - Memory size in bytes
+
+    Example response:
+    ```json
+    [
+        {
+            "ext_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "name": "my-vm-01",
+            "cluster_ext_id": "00061663-9fa0-28ca-185b-ac1f6b6f97e2",
+            "power_state": "ON",
+            "num_sockets": 2,
+            "num_cores_per_socket": 2,
+            "memory_size_bytes": 8589934592
+        }
+    ]
+    ```
+    """,
+)
+def list_vms(request: Request) -> list[VmListMetadata]:
+    api: VirtualMachineMgmt = request.app.state.vmm
+    return api.list_vms()
 
 
 @router.post(

@@ -1,7 +1,7 @@
 module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :cluster, :args
-    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory
+    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -17,6 +17,7 @@ module ForemanNutanix
       @associate_external_ip = args[:associate_external_ip] || true
       @cpus = args[:cpus] || 2
       @memory = args[:memory] || 4
+      @power_state = args[:power_state]
       @persisted = false
     end
 
@@ -44,7 +45,19 @@ module ForemanNutanix
     # Required by Foreman - VM status
     def state
       Rails.logger.info "=== NUTANIX: NutanixCompute::state called ==="
-      persisted? ? 'running' : 'pending'
+      return 'pending' unless persisted?
+
+      # Map Nutanix power states to Foreman-friendly states
+      case @power_state
+      when 'ON'
+        'running'
+      when 'OFF'
+        'stopped'
+      when 'PAUSED'
+        'paused'
+      else
+        'unknown'
+      end
     end
     alias_method :status, :state
 
