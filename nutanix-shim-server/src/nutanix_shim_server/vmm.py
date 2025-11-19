@@ -328,6 +328,8 @@ class VmListMetadata:
     num_sockets: None | int
     num_cores_per_socket: None | int
     memory_size_bytes: None | int
+    mac_address: None | str
+    ip_addresses: list[str]
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -340,6 +342,21 @@ class VmListMetadata:
         # Convert power state enum to string
         power_state = str(vm.power_state) if vm.power_state else None
 
+        # Extract MAC address from first NIC
+        mac_address = None
+        ip_addresses = []
+        if hasattr(vm, "nics") and vm.nics:
+            first_nic = vm.nics[0]
+            if hasattr(first_nic, "backing_info") and first_nic.backing_info:
+                mac_address = getattr(first_nic.backing_info, "mac_address", None)
+            # Extract IP addresses from NIC network info
+            if hasattr(first_nic, "network_info") and first_nic.network_info:
+                ipv4_config = getattr(first_nic.network_info, "ipv4_config", None)
+                if ipv4_config and hasattr(ipv4_config, "ip_address"):
+                    ip_addr = ipv4_config.ip_address
+                    if ip_addr and hasattr(ip_addr, "value"):
+                        ip_addresses.append(ip_addr.value)
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
@@ -348,6 +365,8 @@ class VmListMetadata:
             num_sockets=vm.num_sockets,
             num_cores_per_socket=vm.num_cores_per_socket,
             memory_size_bytes=vm.memory_size_bytes,
+            mac_address=mac_address,
+            ip_addresses=ip_addresses,
         )
 
 

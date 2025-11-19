@@ -200,6 +200,13 @@ module ForemanNutanix
       persisted? ? @mac_address : nil
     end
 
+    # Required by Foreman - MAC addresses hash for VM association
+    def mac_addresses
+      Rails.logger.info "=== NUTANIX: NutanixCompute::mac_addresses called, mac_address=#{@mac_address} ==="
+      return {} unless @mac_address
+      { 'nic0' => @mac_address }
+    end
+
     # Required by Foreman - VM description
     def vm_description
       Rails.logger.info "=== NUTANIX: NutanixCompute::vm_description called ==="

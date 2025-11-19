@@ -242,51 +242,9 @@ module ForemanNutanix
     # Find existing VM by UUID
     def find_vm_by_uuid(uuid)
       Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID CALLED with uuid: #{uuid} ==="
-
       return nil if uuid.nil? || uuid.to_s.strip.empty?
 
-      # Extract the actual UUID if it has a prefix (e.g., "ZXJnb24=:eab4ff32-5011-59d0-9ad4-01228d3121db")
-      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
-      Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID using actual_uuid: #{actual_uuid} ==="
-
-      # Fetch VM details from shim server
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}")
-      response = Net::HTTP.get_response(uri)
-
-      if response.is_a?(Net::HTTPSuccess)
-        data = JSON.parse(response.body)
-        Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID got data: #{data} ==="
-
-        # Calculate total CPUs from sockets and cores
-        total_cpus = (data['num_sockets'] || 1) * (data['num_cores_per_socket'] || 1)
-        # Convert memory from bytes to GB
-        memory_gb = data['memory_size_bytes'] ? (data['memory_size_bytes'].to_f / 1024**3).round : 4
-
-        vm = NutanixCompute.new(cluster, {
-          identity: data['ext_id'],
-          name: data['name'],
-          cpus: total_cpus,
-          memory: memory_gb,
-          power_state: data['power_state'],
-          mac_address: data['mac_address'],
-          ip_addresses: data['ip_addresses'] || []
-        })
-        vm.instance_variable_set(:@persisted, true)
-        Rails.logger.info "=== NUTANIX: FIND_VM_BY_UUID returning VM: #{vm} ==="
-        vm
-      else
-        Rails.logger.error "=== NUTANIX: FIND_VM_BY_UUID failed: #{response.code} - #{response.body} ==="
-        # Return a basic VM object if we can't fetch details
-        vm = NutanixCompute.new(cluster, { name: uuid, identity: uuid })
-        vm.instance_variable_set(:@persisted, true)
-        vm
-      end
-    rescue StandardError => e
-      Rails.logger.error "=== NUTANIX: FIND_VM_BY_UUID error: #{e.message} ==="
-      vm = NutanixCompute.new(cluster, { name: uuid, identity: uuid })
-      vm.instance_variable_set(:@persisted, true)
-      vm
+      client.servers.get(uuid)
     end
 
     # Foreman might call ready? on the compute resource
@@ -301,12 +259,11 @@ module ForemanNutanix
 
       return true if uuid.nil? || uuid.to_s.strip.empty?
 
-      # Extract the actual UUID if it has a prefix (e.g., "ZXJnb24=:eab4ff32-5011-59d0-9ad4-01228d3121db")
+      # Extract the actual UUID if it has a prefix
       actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
-      Rails.logger.info "=== NUTANIX: DESTROY_VM using actual_uuid: #{actual_uuid} ==="
 
       # Call the shim server to delete the VM
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      base = shim_server_url
       uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}")
 
       http = Net::HTTP.new(uri.host, uri.port)
@@ -316,7 +273,7 @@ module ForemanNutanix
       response = http.request(request)
 
       if response.is_a?(Net::HTTPNoContent) || response.is_a?(Net::HTTPSuccess)
-        Rails.logger.info "=== NUTANIX: VM #{uuid} deleted successfully ==="
+        Rails.logger.info "=== NUTANIX: VM #{actual_uuid} deleted successfully ==="
         true
       else
         error_message = "Failed to delete VM: #{response.code} - #{response.body}"

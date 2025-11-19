@@ -25,14 +25,49 @@ module ForemanNutanix
 
       def get(uuid)
         Rails.logger.info "=== NUTANIX: ServersCollection::get called with uuid: #{uuid} ==="
-        # Return the NutanixCompute model
-        NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
+
+        # Extract the actual UUID if it has a prefix
+        actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+
+        # Fetch full VM details from shim server
+        base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+        uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}")
+        response = Net::HTTP.get_response(uri)
+
+        if response.is_a?(Net::HTTPSuccess)
+          data = JSON.parse(response.body)
+
+          total_cpus = (data['num_sockets'] || 1) * (data['num_cores_per_socket'] || 1)
+          memory_gb = data['memory_size_bytes'] ? (data['memory_size_bytes'].to_f / 1024**3).round : 4
+
+          vm = NutanixCompute.new(@cluster, {
+            identity: data['ext_id'],
+            name: data['name'],
+            cpus: total_cpus,
+            memory: memory_gb,
+            power_state: data['power_state'],
+            mac_address: data['mac_address'],
+            ip_addresses: data['ip_addresses'] || []
+          })
+          vm.instance_variable_set(:@persisted, true)
+          vm
+        else
+          Rails.logger.error "=== NUTANIX: ServersCollection::get failed: #{response.code} ==="
+          vm = NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
+          vm.instance_variable_set(:@persisted, true)
+          vm
+        end
+      rescue StandardError => e
+        Rails.logger.error "=== NUTANIX: ServersCollection::get error: #{e.message} ==="
+        vm = NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
+        vm.instance_variable_set(:@persisted, true)
+        vm
       end
 
       def all(opts = {})
         Rails.logger.info "=== NUTANIX: ServersCollection::all called with opts: #{opts} ==="
 
-        # Fetch VMs from shim server
+        # Fetch VMs from shim server (now includes MAC and IP)
         base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
         uri = URI("#{base.chomp('/')}/api/v1/vmm/list-vms")
         response = Net::HTTP.get_response(uri)
@@ -43,9 +78,7 @@ module ForemanNutanix
 
         # Convert to NutanixCompute instances
         filtered_data.map do |vm_data|
-          # Calculate total CPUs from sockets and cores
           total_cpus = (vm_data['num_sockets'] || 1) * (vm_data['num_cores_per_socket'] || 1)
-          # Convert memory from bytes to GB
           memory_gb = vm_data['memory_size_bytes'] ? (vm_data['memory_size_bytes'].to_f / 1024**3).round : 4
 
           vm = NutanixCompute.new(@cluster, {
@@ -53,9 +86,10 @@ module ForemanNutanix
             name: vm_data['name'],
             cpus: total_cpus,
             memory: memory_gb,
-            power_state: vm_data['power_state']
+            power_state: vm_data['power_state'],
+            mac_address: vm_data['mac_address'],
+            ip_addresses: vm_data['ip_addresses'] || []
           })
-          # Mark as persisted since these are existing VMs
           vm.instance_variable_set(:@persisted, true)
           vm
         end
