@@ -65,18 +65,14 @@ module ForemanNutanix
     end
 
     # Available networks for VMs
-    def available_networks(_cluster_id = nil)
+    def available_networks
       Rails.logger.info '=== NUTANIX: Fetching available networks from shim server ==='
       base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
       uri = URI("#{base.chomp('/')}/api/v1/networking/list-networks")
       response = Net::HTTP.get_response(uri)
       data = JSON.parse(response.body)
 
-      # Filter networks by the cluster associated with this compute resource
-      cluster_ext_id = self.cluster
-      filtered_data = data.select { |network| network['cluster_ext_id'] == cluster_ext_id }
-
-      filtered_data.map do |network|
+      data.map do |network|
         OpenStruct.new({
           id: network['ext_id'],
           ext_id: network['ext_id'],
@@ -84,7 +80,7 @@ module ForemanNutanix
           subnet_type: network['subnet_type'],
           cluster_name: network['cluster_name'],
           ipv4_subnet: network['ipv4_subnet'],
-          ipv4_gateway: network['ipv4_gateway']
+          ipv4_gateway: network['ipv4_gateway'],
         })
       end
     rescue StandardError => e
@@ -107,7 +103,7 @@ module ForemanNutanix
       data = JSON.parse(response.body)
 
       # Filter storage containers by the cluster associated with this compute resource
-      cluster_ext_id = self.cluster
+      cluster_ext_id = cluster
       filtered_data = data.select { |container| container['cluster_ext_id'] == cluster_ext_id }
 
       filtered_data.map do |container|
@@ -118,7 +114,7 @@ module ForemanNutanix
           cluster_name: container['cluster_name'],
           max_capacity_bytes: container['max_capacity_bytes'],
           replication_factor: container['replication_factor'],
-          is_compression_enabled: container['is_compression_enabled']
+          is_compression_enabled: container['is_compression_enabled'],
         })
       end
     rescue StandardError => e
@@ -130,7 +126,7 @@ module ForemanNutanix
     def cluster_resource_stats
       Rails.logger.info '=== NUTANIX: Fetching cluster resource stats from shim server ==='
       base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      cluster_id = self.cluster
+      cluster_id = cluster
       return nil unless cluster_id
 
       uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/clusters/#{cluster_id}/stats")
@@ -159,7 +155,7 @@ module ForemanNutanix
       data = JSON.parse(response.body)
 
       # Filter images by cluster if cluster_location_ext_ids is available
-      cluster_ext_id = self.cluster
+      cluster_ext_id = cluster
       filtered_data = data.select do |image|
         # Include image if it's available on this cluster
         cluster_locations = image['cluster_location_ext_ids'] || []
@@ -177,7 +173,7 @@ module ForemanNutanix
           name: display_name,
           description: image['description'],
           size_bytes: image['size_bytes'],
-          type: image['type']
+          type: image['type'],
         })
       end
     rescue StandardError => e
