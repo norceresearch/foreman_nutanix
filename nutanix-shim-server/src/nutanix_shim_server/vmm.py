@@ -113,6 +113,23 @@ class VirtualMachineMgmt:
         # Get updated power state
         return self.get_vm_power_state(vm_ext_id)
 
+    def delete_vm(self, vm_ext_id: str) -> None:
+        """
+        Delete a virtual machine.
+
+        Args:
+            vm_ext_id: The external ID of the VM to delete
+
+        Raises:
+            ApiException: If the VM cannot be deleted
+        """
+        # First fetch the VM to get its ETag (required for deletion)
+        get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
+        etag = self.client.get_etag(get_resp)
+
+        # Delete with the ETag header
+        self.vms_api.delete_vm_by_id(extId=vm_ext_id, if_match=etag)
+
     def provision_vm(self, request: "VmProvisionRequest") -> "VmMetadata":
         """
         Provision a new VM with network (not image-based), CPU, memory, and disk configuration.

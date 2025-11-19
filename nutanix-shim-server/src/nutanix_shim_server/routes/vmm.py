@@ -156,3 +156,23 @@ def set_vm_power_state(
 ) -> VmPowerStateResponse:
     api: VirtualMachineMgmt = request.app.state.vmm
     return api.set_vm_power_state(vm_id, power_request.action)
+
+
+@router.delete(
+    "/vms/{vm_id}",
+    status_code=204,
+    summary="Delete a virtual machine",
+    description="""
+    Permanently deletes a virtual machine.
+
+    The VM must be powered off before deletion. If the VM is running, power it off first
+    using the power-state endpoint with POWER_OFF action.
+
+    **Warning**: This operation is irreversible. All VM data will be permanently deleted.
+
+    Returns 204 No Content on success.
+    """,
+)
+def delete_vm(request: Request, vm_id: str) -> None:
+    api: VirtualMachineMgmt = request.app.state.vmm
+    api.delete_vm(vm_id)

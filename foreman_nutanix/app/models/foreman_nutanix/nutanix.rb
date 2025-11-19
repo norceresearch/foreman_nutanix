@@ -257,9 +257,32 @@ module ForemanNutanix
     # Destroy VM
     def destroy_vm(uuid)
       Rails.logger.info "=== NUTANIX: DESTROY_VM CALLED with uuid: #{uuid} ==="
-      true
+
+      return true if uuid.nil? || uuid.to_s.strip.empty?
+
+      # Call the shim server to delete the VM
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{uuid}")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Delete.new(uri.path)
+      response = http.request(request)
+
+      if response.is_a?(Net::HTTPNoContent) || response.is_a?(Net::HTTPSuccess)
+        Rails.logger.info "=== NUTANIX: VM #{uuid} deleted successfully ==="
+        true
+      else
+        error_message = "Failed to delete VM: #{response.code} - #{response.body}"
+        Rails.logger.error "=== NUTANIX: #{error_message} ==="
+        raise StandardError, error_message
+      end
     rescue ActiveRecord::RecordNotFound
       true
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error in destroy_vm: #{e.message} ==="
+      raise e
     end
 
     # Console access
