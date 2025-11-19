@@ -4,6 +4,7 @@ from nutanix_shim_server.vmm import (
     VirtualMachineMgmt,
     ImageMetadata,
     VmListMetadata,
+    VmDetailsMetadata,
     VmProvisionRequest,
     VmMetadata,
     PowerStateChangeRequest,
@@ -56,6 +57,41 @@ def list_clusters(request: Request) -> list[ImageMetadata]:
 def list_vms(request: Request) -> list[VmListMetadata]:
     api: VirtualMachineMgmt = request.app.state.vmm
     return api.list_vms()
+
+
+@router.get(
+    "/vms/{vm_id}",
+    response_model=VmDetailsMetadata,
+    summary="Get VM details",
+    description="""
+    Returns detailed information about a specific VM including MAC address and IP addresses.
+
+    The response includes:
+    - Basic VM info (name, ext_id, cluster, power state)
+    - CPU configuration (sockets and cores)
+    - Memory size
+    - MAC address of the first NIC
+    - IP addresses assigned to the VM
+
+    Example response:
+    ```json
+    {
+        "ext_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "my-vm-01",
+        "cluster_ext_id": "00061663-9fa0-28ca-185b-ac1f6b6f97e2",
+        "power_state": "ON",
+        "num_sockets": 2,
+        "num_cores_per_socket": 2,
+        "memory_size_bytes": 8589934592,
+        "mac_address": "50:6b:8d:12:34:56",
+        "ip_addresses": ["192.168.1.100"]
+    }
+    ```
+    """,
+)
+def get_vm_details(request: Request, vm_id: str) -> VmDetailsMetadata:
+    api: VirtualMachineMgmt = request.app.state.vmm
+    return api.get_vm_details(vm_id)
 
 
 @router.post(

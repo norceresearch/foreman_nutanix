@@ -4,8 +4,10 @@ import os
 import datetime
 import dataclasses
 import enum
+import time
 from typing import Self, cast
 import ntnx_vmm_py_client as vmm
+import ntnx_prism_py_client as prism
 
 try:
     from IPython.terminal.embed import embed
@@ -28,6 +30,16 @@ class VirtualMachineMgmt:
         self.config.verify_ssl = False  # TODO: True
         self.config.port = os.environ.get("NUTANIX_PORT", 9440)
 
+        # Prism config for task polling
+        self.prism_config = prism.Configuration()
+        self.prism_config.host = os.environ["NUTANIX_HOST"]
+        self.prism_config.scheme = "https"
+        self.prism_config.set_api_key(os.environ["NUTANIX_API_KEY"])
+        self.prism_config.max_retry_attempts = 3
+        self.prism_config.backoff_factor = 3
+        self.prism_config.verify_ssl = False
+        self.prism_config.port = os.environ.get("NUTANIX_PORT", 9440)
+
     @property
     def client(self) -> vmm.ApiClient:
         if not hasattr(self, "_client"):
@@ -36,6 +48,21 @@ class VirtualMachineMgmt:
                 header_name="Accept-Encoding", header_value="gzip, deflate, br"
             )
         return self._client
+
+    @property
+    def prism_client(self) -> prism.ApiClient:
+        if not hasattr(self, "_prism_client"):
+            self._prism_client = prism.ApiClient(self.prism_config)
+            self._prism_client.add_default_header(
+                header_name="Accept-Encoding", header_value="gzip, deflate, br"
+            )
+        return self._prism_client
+
+    @property
+    def tasks_api(self) -> prism.TasksApi:
+        if not hasattr(self, "_tasks_api"):
+            self._tasks_api = prism.TasksApi(self.prism_client)
+        return self._tasks_api
 
     @property
     def images_api(self) -> vmm.ImagesApi:
@@ -65,6 +92,20 @@ class VirtualMachineMgmt:
         if vms:
             return [VmListMetadata.from_nutanix_vm(vm) for vm in vms]
         return []
+
+    def get_vm_details(self, vm_ext_id: str) -> "VmDetailsMetadata":
+        """
+        Get detailed information about a VM including MAC address and IP addresses.
+
+        Args:
+            vm_ext_id: The external ID of the VM
+
+        Returns:
+            VmDetailsMetadata with full VM details
+        """
+        resp: vmm.AhvConfigGetVmApiResponse = self.vms_api.get_vm_by_id(extId=vm_ext_id)  # type: ignore
+        vm: vmm.AhvConfigVm = resp.data  # type: ignore
+        return VmDetailsMetadata.from_nutanix_vm(vm)
 
     def get_vm_power_state(self, vm_ext_id: str) -> "VmPowerStateResponse":
         """
@@ -190,20 +231,63 @@ class VirtualMachineMgmt:
             disks=[disk],
         )
 
-        # Create the VM
+        # Create the VM - this returns a task reference, not the VM directly
         resp: vmm.CreateVmApiResponse = self.vms_api.create_vm(body=vm_spec)  # type: ignore
-        vm: vmm.AhvConfigVm = resp.data.ext_id  # type: ignore
 
-        # Return metadata about the created VM
-        return VmMetadata(
-            ext_id=cast(str, resp.data.ext_id),
-            name=request.name,
-            description=request.description,
-            num_sockets=request.num_sockets,
-            num_cores_per_socket=request.num_cores_per_socket,
-            memory_size_bytes=request.memory_size_bytes,
-            disk_size_bytes=request.disk_size_bytes,
-        )
+        # Get task ID - keep the full format including prefix for the tasks API
+        task_ext_id = cast(str, resp.data.ext_id)
+
+        print(f"DEBUG: Waiting for task {task_ext_id} to complete...")
+
+        # Poll for task completion
+        max_wait_seconds = 120
+        poll_interval = 2
+        elapsed = 0
+
+        while elapsed < max_wait_seconds:
+            task_resp = self.tasks_api.get_task_by_id(extId=task_ext_id)
+            task = task_resp.data
+            status = str(task.status) if task.status else "UNKNOWN"
+
+            print(f"DEBUG: Task status: {status}")
+
+            if status == "SUCCEEDED":
+                # Extract VM ext_id from entities_affected
+                if task.entities_affected:
+                    for entity in task.entities_affected:
+                        # The VM entity will have the ext_id we need
+                        vm_ext_id = entity.ext_id
+                        print(f"DEBUG: VM created with ext_id: {vm_ext_id}")
+
+                        # Power on the VM so it can get an IP via DHCP
+                        print(f"DEBUG: Powering on VM {vm_ext_id}...")
+                        try:
+                            self.vms_api.power_on_vm(extId=vm_ext_id)
+                            print(f"DEBUG: VM {vm_ext_id} power on initiated")
+                        except Exception as e:
+                            print(f"DEBUG: Failed to power on VM: {e}")
+                            # Continue anyway - VM was created successfully
+
+                        return VmMetadata(
+                            ext_id=vm_ext_id,
+                            name=request.name,
+                            description=request.description,
+                            num_sockets=request.num_sockets,
+                            num_cores_per_socket=request.num_cores_per_socket,
+                            memory_size_bytes=request.memory_size_bytes,
+                            disk_size_bytes=request.disk_size_bytes,
+                        )
+
+                raise ValueError("Task succeeded but no VM entity found in response")
+
+            elif status == "FAILED":
+                error_msg = task.error_messages if hasattr(task, 'error_messages') else "Unknown error"
+                raise ValueError(f"VM creation task failed: {error_msg}")
+
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+        raise TimeoutError(f"VM creation task did not complete within {max_wait_seconds} seconds")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -264,6 +348,63 @@ class VmListMetadata:
             num_sockets=vm.num_sockets,
             num_cores_per_socket=vm.num_cores_per_socket,
             memory_size_bytes=vm.memory_size_bytes,
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class VmDetailsMetadata:
+    """
+    Detailed metadata for a single VM.
+
+    Contains all information needed for Foreman host details view.
+    """
+
+    ext_id: str
+    name: str
+    cluster_ext_id: None | str
+    power_state: None | str
+    num_sockets: None | int
+    num_cores_per_socket: None | int
+    memory_size_bytes: None | int
+    mac_address: None | str
+    ip_addresses: list[str]
+
+    @classmethod
+    def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
+        """Convert Nutanix SDK VM to our detailed response model"""
+        # Extract cluster ext_id from cluster reference
+        cluster_ext_id = None
+        if hasattr(vm, "cluster") and vm.cluster:
+            cluster_ext_id = vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+
+        # Convert power state enum to string
+        power_state = str(vm.power_state) if vm.power_state else None
+
+        # Extract MAC address from first NIC
+        mac_address = None
+        ip_addresses = []
+        if hasattr(vm, "nics") and vm.nics:
+            first_nic = vm.nics[0]
+            if hasattr(first_nic, "backing_info") and first_nic.backing_info:
+                mac_address = getattr(first_nic.backing_info, "mac_address", None)
+            # Extract IP addresses from NIC network info
+            if hasattr(first_nic, "network_info") and first_nic.network_info:
+                ipv4_config = getattr(first_nic.network_info, "ipv4_config", None)
+                if ipv4_config and hasattr(ipv4_config, "ip_address"):
+                    ip_addr = ipv4_config.ip_address
+                    if ip_addr and hasattr(ip_addr, "value"):
+                        ip_addresses.append(ip_addr.value)
+
+        return cls(
+            ext_id=cast(str, vm.ext_id),
+            name=cast(str, vm.name),
+            cluster_ext_id=cluster_ext_id,
+            power_state=power_state,
+            num_sockets=vm.num_sockets,
+            num_cores_per_socket=vm.num_cores_per_socket,
+            memory_size_bytes=vm.memory_size_bytes,
+            mac_address=mac_address,
+            ip_addresses=ip_addresses,
         )
 
 

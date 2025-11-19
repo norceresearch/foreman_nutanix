@@ -4,6 +4,7 @@ module ForemanNutanix
     attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
     attr_accessor :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description
     attr_accessor :network_id, :storage_container, :disk_size_gb
+    attr_accessor :mac_address, :vm_ip_addresses
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -32,6 +33,10 @@ module ForemanNutanix
       @num_cores_per_socket = args[:num_cores_per_socket] || @cpus
       @disk_size_bytes = args[:disk_size_bytes] || (@disk_size_gb.to_i * 1024**3)
       @description = args[:description] || ""
+
+      # VM details from Nutanix
+      @mac_address = args[:mac_address]
+      @vm_ip_addresses = args[:ip_addresses] || []
     end
 
     # Required by Foreman - indicates if VM exists
@@ -170,26 +175,29 @@ module ForemanNutanix
     # Required by Foreman - public IP address
     def vm_ip_address
       Rails.logger.info "=== NUTANIX: NutanixCompute::vm_ip_address called ==="
-      persisted? ? '192.168.1.100' : nil
+      return nil unless persisted?
+      @vm_ip_addresses&.first
     end
     alias_method :public_ip_address, :vm_ip_address
 
     # Required by Foreman - private IP address
     def private_ip_address
       Rails.logger.info "=== NUTANIX: NutanixCompute::private_ip_address called ==="
-      persisted? ? '10.0.0.100' : nil
+      return nil unless persisted?
+      # Return second IP if available, otherwise same as public
+      @vm_ip_addresses&.length.to_i > 1 ? @vm_ip_addresses[1] : @vm_ip_addresses&.first
     end
 
     # Required by Foreman - all IP addresses
     def ip_addresses
       Rails.logger.info "=== NUTANIX: NutanixCompute::ip_addresses called ==="
-      persisted? ? [vm_ip_address, private_ip_address] : []
+      persisted? ? (@vm_ip_addresses || []) : []
     end
 
     # Required by Foreman - MAC address
     def mac
       Rails.logger.info "=== NUTANIX: NutanixCompute::mac called ==="
-      persisted? ? '00:50:56:aa:bb:cc' : nil
+      persisted? ? @mac_address : nil
     end
 
     # Required by Foreman - VM description
