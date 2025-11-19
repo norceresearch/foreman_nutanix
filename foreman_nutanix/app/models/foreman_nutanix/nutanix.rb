@@ -104,9 +104,11 @@ module ForemanNutanix
 
       # Filter storage containers by the cluster associated with this compute resource
       cluster_ext_id = cluster
+      Rails.logger.info "=== NUTANIX: Storage containers - total: #{data.count}, cluster_ext_id: #{cluster_ext_id} ==="
       filtered_data = data.select { |container| container['cluster_ext_id'] == cluster_ext_id }
+      Rails.logger.info "=== NUTANIX: Storage containers - filtered: #{filtered_data.count} ==="
 
-      filtered_data.map do |container|
+      result = filtered_data.map do |container|
         OpenStruct.new({
           id: container['ext_id'],
           ext_id: container['ext_id'],
@@ -117,6 +119,8 @@ module ForemanNutanix
           is_compression_enabled: container['is_compression_enabled'],
         })
       end
+      Rails.logger.info "=== NUTANIX: Storage containers returning: #{result.map { |c| { id: c.id, name: c.name } }} ==="
+      result
     rescue StandardError => e
       Rails.logger.error "=== NUTANIX: Error fetching storage containers: #{e.message} ==="
       []
@@ -184,7 +188,8 @@ module ForemanNutanix
     # Core provisioning method - this is what Foreman calls to create a VM
     def create_vm(args = {})
       Rails.logger.info "=== NUTANIX: CREATE_VM CALLED with args: #{args} ==="
-      Rails.logger.info "=== NUTANIX: CREATE_VM caller: #{caller_locations(1, 3).join(', ')} ==="
+      Rails.logger.info "=== NUTANIX: CREATE_VM args class: #{args.class}, keys: #{args.keys rescue 'N/A'} ==="
+      Rails.logger.info "=== NUTANIX: CREATE_VM network_id: #{args[:network_id] || args['network_id']}, storage_container: #{args[:storage_container] || args['storage_container']} ==="
 
       vm = new_vm(args)
       Rails.logger.info '=== NUTANIX: CREATE_VM calling vm.save ==='
@@ -200,9 +205,12 @@ module ForemanNutanix
     # New VM instance (not persisted)
     def new_vm(attr = {})
       Rails.logger.info "=== NUTANIX: NEW_VM CALLED with attr: #{attr} ==="
+      Rails.logger.info "=== NUTANIX: NEW_VM attr keys: #{attr.keys} ==="
+      Rails.logger.info "=== NUTANIX: NEW_VM storage_container value: #{attr['storage_container'] || attr[:storage_container]} ==="
       vm_attrs = vm_instance_defaults.merge(attr.to_hash.deep_symbolize_keys)
       vm_attrs = normalize_vm_attrs(vm_attrs)
       Rails.logger.info "=== NUTANIX: NEW_VM merged attrs: #{vm_attrs} ==="
+      Rails.logger.info "=== NUTANIX: NEW_VM merged keys: #{vm_attrs.keys} ==="
 
       # Use the Foreman pattern - client.servers.new returns our VM model
       client.servers.new(vm_attrs)

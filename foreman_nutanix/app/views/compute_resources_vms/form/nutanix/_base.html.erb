@@ -5,13 +5,25 @@
     compute_resource.available_images,
     :id, :name,
     { :include_blank => _('Select Image') },
-    { :label => _('Image'), :help_inline => _('Operating system image to use') } %>
+    { :label => _('Image'), :help_inline => _('Operating system image to use (optional)') } %>
+
+<%= select_f f, :network_id,
+    compute_resource.available_networks,
+    :id, :name,
+    { :include_blank => _('Select Network') },
+    { :label => _('Network'), :help_inline => _('Network/subnet for the VM') } %>
+
+<%= select_f f, :storage_container,
+    compute_resource.available_storage_containers,
+    :id, :name,
+    { :include_blank => _('Select Storage Container') },
+    { :label => _('Storage Container'), :help_inline => _('Storage container for VM disks') } %>
 
 <%= select_f f, :machine_type,
     compute_resource.available_flavors,
     :id, :name,
     { :include_blank => _('Select Flavor') },
-    { :label => _('Machine Type'), :help_inline => _('VM size template') } %>
+    { :label => _('Machine Type'), :help_inline => _('VM size template (optional)') } %>
 
 <%= counter_f f, :cpus,
     { :label => _('CPUs'),
@@ -24,3 +36,8 @@
       :help_inline => _('Amount of memory in GB'),
       :min => 1,
       :max => 64 } %>
+
+<%= text_f f, :disk_size_gb,
+    { :label => _('Disk Size (GB)'),
+      :help_inline => _('Size of the boot disk in GB'),
+      :value => 50 } %>

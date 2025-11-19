@@ -165,7 +165,7 @@ class StorageContainerMetadata:
     def from_nutanix_storage_container(cls, container: cm.StorageContainer) -> Self:
         """Convert Nutanix SDK StorageContainer to our response model"""
         return cls(
-            ext_id=cast(str, container.ext_id),
+            ext_id=cast(str, container.container_ext_id),  # Note: SDK uses container_ext_id, not ext_id
             name=cast(str, container.name),
             cluster_name=container.cluster_name,
             cluster_ext_id=container.cluster_ext_id,

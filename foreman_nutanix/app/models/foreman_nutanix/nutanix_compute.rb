@@ -2,6 +2,8 @@ module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :cluster, :args
     attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
+    attr_accessor :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description
+    attr_accessor :network_id, :storage_container, :disk_size_gb
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -19,6 +21,17 @@ module ForemanNutanix
       @memory = args[:memory] || 4
       @power_state = args[:power_state]
       @persisted = false
+
+      # Provisioning-specific attributes
+      @network_id = args[:network_id] || args[:network]
+      @storage_container = args[:storage_container]
+      @disk_size_gb = args[:disk_size_gb] || 50
+      @subnet_ext_id = args[:subnet_ext_id] || @network_id
+      @storage_container_ext_id = args[:storage_container_ext_id] || @storage_container
+      @num_sockets = args[:num_sockets] || 1
+      @num_cores_per_socket = args[:num_cores_per_socket] || @cpus
+      @disk_size_bytes = args[:disk_size_bytes] || (@disk_size_gb.to_i * 1024**3)
+      @description = args[:description] || ""
     end
 
     # Required by Foreman - indicates if VM exists
@@ -30,10 +43,68 @@ module ForemanNutanix
     # Required by Foreman - save the VM (actually create it)
     def save
       Rails.logger.info "=== NUTANIX: NutanixCompute::save called ==="
-      # Mock the save operation
-      @persisted = true
-      @identity ||= "vm-#{Time.now.to_i}"
-      true
+      Rails.logger.info "=== NUTANIX: VM attributes - network_id: #{@network_id}, storage_container: #{@storage_container}, subnet_ext_id: #{@subnet_ext_id}, storage_container_ext_id: #{@storage_container_ext_id} ==="
+
+      # Build the provision request payload
+      # Convert memory from GB to bytes (1 GB = 1024^3 bytes)
+      memory_bytes = (@memory || 4).to_i * 1024**3
+
+      # Use form values, falling back to internal values
+      actual_subnet = @subnet_ext_id || @network_id
+      actual_storage = @storage_container_ext_id || @storage_container
+      actual_disk_bytes = @disk_size_bytes || (@disk_size_gb.to_i * 1024**3)
+
+      # Validate required fields
+      if actual_subnet.nil? || actual_subnet.to_s.strip.empty?
+        raise StandardError, "Network/Subnet is required for VM provisioning"
+      end
+      if actual_storage.nil? || actual_storage.to_s.strip.empty?
+        raise StandardError, "Storage Container is required for VM provisioning"
+      end
+
+      provision_request = {
+        name: @name,
+        cluster_ext_id: @cluster,
+        subnet_ext_id: actual_subnet,
+        storage_container_ext_id: actual_storage,
+        num_sockets: @num_sockets.to_i,
+        num_cores_per_socket: @num_cores_per_socket.to_i,
+        memory_size_bytes: memory_bytes,
+        disk_size_bytes: actual_disk_bytes.to_i,
+        description: @description || ""
+      }
+
+      Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="
+
+      # Call the shim server to provision the VM
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/provision-vm")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri.path)
+      request['Content-Type'] = 'application/json'
+      request.body = provision_request.to_json
+
+      response = http.request(request)
+
+      if response.is_a?(Net::HTTPSuccess)
+        result = JSON.parse(response.body)
+        Rails.logger.info "=== NUTANIX: VM provisioned successfully: #{result} ==="
+
+        # Update identity with the real ext_id from Nutanix
+        @identity = result['ext_id']
+        @persisted = true
+        true
+      else
+        error_message = "Failed to provision VM: #{response.code} - #{response.body}"
+        Rails.logger.error "=== NUTANIX: #{error_message} ==="
+        raise StandardError, error_message
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error in save: #{e.message} ==="
+      raise e
     end
 
     # Required by Foreman - VM status
