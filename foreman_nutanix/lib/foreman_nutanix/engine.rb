@@ -38,6 +38,9 @@ module ForemanNutanix
       # Include host extensions
       ::Host::Managed.include ForemanNutanix::HostManagedExtensions
 
+      # Include hosts controller extensions for power status
+      ::Api::V2::HostsController.include ForemanNutanix::Api::V2::HostsControllerExtensions
+
       Rails.logger.info 'ForemanNutanix: Extensions loaded successfully'
     rescue StandardError => e
       Rails.logger.warn "ForemanNutanix: Error loading extensions: #{e.message}"

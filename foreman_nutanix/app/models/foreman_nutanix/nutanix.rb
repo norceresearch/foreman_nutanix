@@ -15,7 +15,13 @@ module ForemanNutanix
     end
 
     def capabilities
-      [:build]
+      [:build, :power]
+    end
+
+    # Foreman checks this for power management support
+    def supports_power?
+      Rails.logger.info "=== NUTANIX: supports_power? called ==="
+      true
     end
 
     def cluster=(cluster)
@@ -251,6 +257,91 @@ module ForemanNutanix
     def ready?
       Rails.logger.info '=== NUTANIX: Nutanix::ready? called ==='
       true
+    end
+
+    # Start VM - called by Foreman for power on
+    def start_vm(uuid)
+      Rails.logger.info "=== NUTANIX: START_VM CALLED with uuid: #{uuid} ==="
+      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+
+      base = shim_server_url
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri.path)
+      request['Content-Type'] = 'application/json'
+      request.body = { action: 'POWER_ON' }.to_json
+
+      response = http.request(request)
+      response.is_a?(Net::HTTPSuccess)
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: START_VM ERROR: #{e.message} ==="
+      raise e
+    end
+
+    # Stop VM - called by Foreman for power off
+    def stop_vm(uuid)
+      Rails.logger.info "=== NUTANIX: STOP_VM CALLED with uuid: #{uuid} ==="
+      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+
+      base = shim_server_url
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri.path)
+      request['Content-Type'] = 'application/json'
+      request.body = { action: 'POWER_OFF' }.to_json
+
+      response = http.request(request)
+      response.is_a?(Net::HTTPSuccess)
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: STOP_VM ERROR: #{e.message} ==="
+      raise e
+    end
+
+    # Get VM power state - called by Foreman to check power status
+    def vm_power_state(vm)
+      Rails.logger.info "=== NUTANIX: VM_POWER_STATE CALLED for vm: #{vm} ==="
+      uuid = vm.respond_to?(:identity) ? vm.identity : vm.to_s
+      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+
+      base = shim_server_url
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+      response = Net::HTTP.get_response(uri)
+
+      if response.is_a?(Net::HTTPSuccess)
+        data = JSON.parse(response.body)
+        state = data['power_state']
+        Rails.logger.info "=== NUTANIX: VM_POWER_STATE returning: #{state} ==="
+        # Return hash that Foreman expects
+        { state: state == 'ON' ? 'running' : 'off' }
+      else
+        { state: 'unknown' }
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: VM_POWER_STATE ERROR: #{e.message} ==="
+      { state: 'unknown' }
+    end
+
+    # Power operations - called by Foreman's power_status API
+    def power(uuid, action)
+      Rails.logger.info "=== NUTANIX: POWER CALLED with uuid: #{uuid}, action: #{action} ==="
+      case action.to_s
+      when 'start', 'on'
+        start_vm(uuid)
+      when 'stop', 'off'
+        stop_vm(uuid)
+      when 'state', 'status'
+        vm = find_vm_by_uuid(uuid)
+        vm&.state || 'unknown'
+      else
+        Rails.logger.warn "=== NUTANIX: Unknown power action: #{action} ==="
+        false
+      end
     end
 
     # Destroy VM

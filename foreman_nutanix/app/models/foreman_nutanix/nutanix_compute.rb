@@ -114,17 +114,23 @@ module ForemanNutanix
 
     # Required by Foreman - VM status
     def ready?
-      Rails.logger.info "=== NUTANIX: NutanixCompute::ready? called ==="
+      Rails.logger.info "=== NUTANIX: NutanixCompute::ready? called, returning #{persisted?} ==="
       persisted? # Only ready if saved
+    end
+
+    # Power state accessor that Foreman might call directly
+    def power_state
+      Rails.logger.info "=== NUTANIX: NutanixCompute::power_state called, returning #{@power_state} ==="
+      @power_state
     end
 
     # Required by Foreman - VM status
     def state
-      Rails.logger.info "=== NUTANIX: NutanixCompute::state called ==="
+      Rails.logger.info "=== NUTANIX: NutanixCompute::state called, power_state=#{@power_state} ==="
       return 'pending' unless persisted?
 
       # Map Nutanix power states to Foreman-friendly states
-      case @power_state
+      result = case @power_state
       when 'ON'
         'running'
       when 'OFF'
@@ -134,6 +140,8 @@ module ForemanNutanix
       else
         'unknown'
       end
+      Rails.logger.info "=== NUTANIX: NutanixCompute::state returning '#{result}' ==="
+      result
     end
     alias_method :status, :state
 
