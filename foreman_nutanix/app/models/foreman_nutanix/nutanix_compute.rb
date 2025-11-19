@@ -196,7 +196,7 @@ module ForemanNutanix
 
     # Required by Foreman - MAC address
     def mac
-      Rails.logger.info "=== NUTANIX: NutanixCompute::mac called ==="
+      Rails.logger.info "=== NUTANIX: NutanixCompute::mac called, persisted=#{persisted?}, mac_address=#{@mac_address} ==="
       persisted? ? @mac_address : nil
     end
 
@@ -226,13 +226,26 @@ module ForemanNutanix
     # Required by Foreman - network interfaces
     def interfaces
       Rails.logger.info "=== NUTANIX: NutanixCompute::interfaces called ==="
-      [OpenStruct.new({ name: 'eth0', network: @network })]
+      [OpenStruct.new({
+        name: 'eth0',
+        network: @network,
+        mac: @mac_address,
+        ip: @vm_ip_addresses&.first
+      })]
     end
 
     # Required by Foreman - network interfaces access
     def network_interfaces
       Rails.logger.info "=== NUTANIX: NutanixCompute::network_interfaces called ==="
       interfaces
+    end
+
+    # Required by Foreman - select matching NIC from compute resource
+    # This is called by Foreman's match_macs_to_nics to assign MAC addresses
+    def select_nic(fog_nics, nic)
+      Rails.logger.info "=== NUTANIX: NutanixCompute::select_nic called with fog_nics=#{fog_nics.inspect}, nic=#{nic.inspect} ==="
+      # Return the first available NIC (we only have one for now)
+      fog_nics.shift
     end
 
     # Required by Foreman - console/serial output

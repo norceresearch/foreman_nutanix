@@ -39,7 +39,7 @@ module ForemanNutanix
     end
 
     def provided_attributes
-      super
+      super.merge({ mac: :mac })
     end
 
     # Test connection to the compute resource
