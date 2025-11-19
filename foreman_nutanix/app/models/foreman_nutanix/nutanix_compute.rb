@@ -172,6 +172,20 @@ module ForemanNutanix
       @name
     end
 
+    # Required by Foreman - creation timestamp
+    def creation_timestamp
+      Rails.logger.info "=== NUTANIX: NutanixCompute::creation_timestamp called ==="
+      # We don't have creation time from the API yet, return nil
+      nil
+    end
+
+    # Required by Foreman - image name for display
+    def pretty_image_name
+      Rails.logger.info "=== NUTANIX: NutanixCompute::pretty_image_name called ==="
+      # We don't track the source image yet
+      nil
+    end
+
     # Required by Foreman - public IP address
     def vm_ip_address
       Rails.logger.info "=== NUTANIX: NutanixCompute::vm_ip_address called ==="
