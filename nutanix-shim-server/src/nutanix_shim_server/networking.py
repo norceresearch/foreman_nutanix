@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import os
 import dataclasses
+import logging
 from typing import Self, cast
 import ntnx_networking_py_client as net
+
+logger = logging.getLogger(__name__)
 
 try:
     from IPython.terminal.embed import embed
@@ -126,8 +129,9 @@ class SubnetMetadata:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     mgmt = Networking()
     subnets = mgmt.list_subnets()
-    print(f"Found {len(subnets)} subnets")
+    logger.info(f"Found {len(subnets)} subnets")
     for subnet in subnets:
-        print(f"  - {subnet.name} ({subnet.ext_id}): {subnet.ipv4_subnet}")
+        logger.info(f"  - {subnet.name} ({subnet.ext_id}): {subnet.ipv4_subnet}")
