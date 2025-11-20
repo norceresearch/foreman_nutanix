@@ -156,13 +156,71 @@ module ForemanNutanix
     # Required by Foreman - start VM
     def start(args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::start called with args: #{args} ==="
-      true
+      return false unless persisted?
+
+      # Extract actual UUID (handle ZXJnb24=:uuid format)
+      actual_uuid = @identity.to_s.include?(':') ? @identity.to_s.split(':').last : @identity.to_s
+
+      # Call the shim server to power on the VM
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri.path)
+      request['Content-Type'] = 'application/json'
+      request.body = { action: 'POWER_ON' }.to_json
+
+      response = http.request(request)
+
+      if response.is_a?(Net::HTTPSuccess)
+        Rails.logger.info "=== NUTANIX: VM #{actual_uuid} powered on successfully ==="
+        @power_state = 'ON'
+        true
+      else
+        error_message = "Failed to power on VM: #{response.code} - #{response.body}"
+        Rails.logger.error "=== NUTANIX: #{error_message} ==="
+        raise StandardError, error_message
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error in start: #{e.message} ==="
+      raise e
     end
 
-    # Required by Foreman - stop VM  
+    # Required by Foreman - stop VM
     def stop(args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::stop called with args: #{args} ==="
-      true
+      return false unless persisted?
+
+      # Extract actual UUID (handle ZXJnb24=:uuid format)
+      actual_uuid = @identity.to_s.include?(':') ? @identity.to_s.split(':').last : @identity.to_s
+
+      # Call the shim server to power off the VM
+      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+
+      request = Net::HTTP::Post.new(uri.path)
+      request['Content-Type'] = 'application/json'
+      request.body = { action: 'POWER_OFF' }.to_json
+
+      response = http.request(request)
+
+      if response.is_a?(Net::HTTPSuccess)
+        Rails.logger.info "=== NUTANIX: VM #{actual_uuid} powered off successfully ==="
+        @power_state = 'OFF'
+        true
+      else
+        error_message = "Failed to power off VM: #{response.code} - #{response.body}"
+        Rails.logger.error "=== NUTANIX: #{error_message} ==="
+        raise StandardError, error_message
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error in stop: #{e.message} ==="
+      raise e
     end
 
     # Required by Foreman - CPU count
