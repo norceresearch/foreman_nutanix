@@ -115,9 +115,11 @@ module ForemanNutanix
     end
 
     # Required by Foreman - VM status
+    # Returns true if VM is powered on and ready to use
     def ready?
-      Rails.logger.info "=== NUTANIX: NutanixCompute::ready? called, returning #{persisted?} ==="
-      persisted? # Only ready if saved
+      is_ready = persisted? && @power_state == 'ON'
+      Rails.logger.info "=== NUTANIX: NutanixCompute::ready? called, persisted=#{persisted?}, power_state=#{@power_state}, returning #{is_ready} ==="
+      is_ready
     end
 
     # Power state accessor that Foreman might call directly
