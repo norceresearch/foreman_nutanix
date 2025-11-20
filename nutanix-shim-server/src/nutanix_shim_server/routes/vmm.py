@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 import logging
+from functools import wraps
 
 from nutanix_shim_server.vmm import (
     VirtualMachineMgmt,
@@ -15,6 +16,27 @@ from nutanix_shim_server.vmm import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/vmm", tags=["Virtual Machine Management (VMM)"])
+
+
+def handle_vm_not_found(func):
+    """
+    Decorator to handle 404 Not Found errors gracefully for VM operations.
+
+    Catches ApiException with status 404 and converts it to a clean HTTPException.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            # Check if it's a 404 Not Found error from Nutanix API
+            if hasattr(e, 'status') and e.status == 404:
+                vm_id = kwargs.get('vm_id', 'unknown')
+                logger.warning(f"VM not found: {vm_id}")
+                raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
+            # Re-raise other exceptions
+            raise
+    return wrapper
 
 
 @router.get(
@@ -92,17 +114,10 @@ def list_vms(request: Request) -> list[VmListMetadata]:
     ```
     """,
 )
+@handle_vm_not_found
 def get_vm_details(request: Request, vm_id: str) -> VmDetailsMetadata:
     api: VirtualMachineMgmt = request.app.state.vmm
-    try:
-        return api.get_vm_details(vm_id)
-    except Exception as e:
-        # Check if it's a 404 Not Found error
-        if hasattr(e, 'status') and e.status == 404:
-            logger.warning(f"VM not found: {vm_id}")
-            raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
-        # Re-raise other exceptions
-        raise
+    return api.get_vm_details(vm_id)
 
 
 @router.post(
@@ -178,17 +193,10 @@ def provision_vm(request: Request, vm_request: VmProvisionRequest) -> VmMetadata
     ```
     """,
 )
+@handle_vm_not_found
 def get_vm_power_state(request: Request, vm_id: str) -> VmPowerStateResponse:
     api: VirtualMachineMgmt = request.app.state.vmm
-    try:
-        return api.get_vm_power_state(vm_id)
-    except Exception as e:
-        # Check if it's a 404 Not Found error
-        if hasattr(e, 'status') and e.status == 404:
-            logger.warning(f"VM not found: {vm_id}")
-            raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
-        # Re-raise other exceptions
-        raise
+    return api.get_vm_power_state(vm_id)
 
 
 @router.post(
@@ -218,19 +226,12 @@ def get_vm_power_state(request: Request, vm_id: str) -> VmPowerStateResponse:
     are not available, use POWER_OFF instead.
     """,
 )
+@handle_vm_not_found
 def set_vm_power_state(
     request: Request, vm_id: str, power_request: PowerStateChangeRequest
 ) -> VmPowerStateResponse:
     api: VirtualMachineMgmt = request.app.state.vmm
-    try:
-        return api.set_vm_power_state(vm_id, power_request.action)
-    except Exception as e:
-        # Check if it's a 404 Not Found error
-        if hasattr(e, 'status') and e.status == 404:
-            logger.warning(f"VM not found: {vm_id}")
-            raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
-        # Re-raise other exceptions
-        raise
+    return api.set_vm_power_state(vm_id, power_request.action)
 
 
 @router.delete(
@@ -248,14 +249,7 @@ def set_vm_power_state(
     Returns 204 No Content on success.
     """,
 )
+@handle_vm_not_found
 def delete_vm(request: Request, vm_id: str) -> None:
     api: VirtualMachineMgmt = request.app.state.vmm
-    try:
-        api.delete_vm(vm_id)
-    except Exception as e:
-        # Check if it's a 404 Not Found error
-        if hasattr(e, 'status') and e.status == 404:
-            logger.warning(f"VM not found (already deleted?): {vm_id}")
-            raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
-        # Re-raise other exceptions
-        raise
+    api.delete_vm(vm_id)
