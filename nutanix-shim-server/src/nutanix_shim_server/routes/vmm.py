@@ -108,6 +108,13 @@ def get_vm_details(request: Request, vm_id: str) -> VmDetailsMetadata:
     - Disk size in bytes (creates an empty SCSI disk on the specified storage container)
     - Network connectivity via subnet with DHCP (VIRTIO NIC)
     - Optional description as metadata
+    - Optional auto power-on with verification (default: true)
+
+    Power-on behavior:
+    - If `power_on` is true (default), the VM will be powered on after creation
+    - The endpoint will wait up to 60 seconds to verify the VM reaches ON state
+    - If power-on fails or times out, the VM will be automatically deleted and an error returned
+    - If `power_on` is false, the VM will remain off after creation
 
     Example request:
     ```json
@@ -120,11 +127,16 @@ def get_vm_details(request: Request, vm_id: str) -> VmDetailsMetadata:
         "num_sockets": 2,
         "num_cores_per_socket": 2,
         "memory_size_bytes": 8589934592,
-        "disk_size_bytes": 107374182400
+        "disk_size_bytes": 107374182400,
+        "power_on": true
     }
     ```
 
     Returns the VM metadata including the external ID of the created VM.
+
+    Errors:
+    - 400: Invalid request parameters
+    - 500: VM creation failed, or power-on failed (VM will be deleted automatically)
     """,
 )
 def provision_vm(request: Request, vm_request: VmProvisionRequest) -> VmMetadata:

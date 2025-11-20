@@ -41,3 +41,8 @@
     { :label => _('Disk Size (GB)'),
       :help_inline => _('Size of the boot disk in GB'),
       :value => 50 } %>
+
+<%= checkbox_f f, :power_on,
+    { :label => _('Power On After Creation'),
+      :help_inline => _('Automatically power on the VM after it is created. If power-on fails, the VM will be deleted.'),
+      :checked => true } %>

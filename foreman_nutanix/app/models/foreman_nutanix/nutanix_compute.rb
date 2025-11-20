@@ -3,7 +3,7 @@ module ForemanNutanix
     attr_reader :identity, :name, :hostname, :cluster, :args
     attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
     attr_accessor :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description
-    attr_accessor :network_id, :storage_container, :disk_size_gb
+    attr_accessor :network_id, :storage_container, :disk_size_gb, :power_on
     attr_accessor :mac_address, :vm_ip_addresses
 
     def initialize(cluster = nil, args = {})
@@ -27,6 +27,7 @@ module ForemanNutanix
       @network_id = args[:network_id] || args[:network]
       @storage_container = args[:storage_container]
       @disk_size_gb = args[:disk_size_gb] || 50
+      @power_on = args.key?(:power_on) ? args[:power_on] : true  # Default to true
       @subnet_ext_id = args[:subnet_ext_id] || @network_id
       @storage_container_ext_id = args[:storage_container_ext_id] || @storage_container
       @num_sockets = args[:num_sockets] || 1
@@ -76,7 +77,8 @@ module ForemanNutanix
         num_cores_per_socket: @num_cores_per_socket.to_i,
         memory_size_bytes: memory_bytes,
         disk_size_bytes: actual_disk_bytes.to_i,
-        description: @description || ""
+        description: @description || "",
+        power_on: @power_on.nil? ? true : @power_on  # Default to true if not set
       }
 
       Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="
