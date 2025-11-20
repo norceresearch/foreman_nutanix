@@ -202,10 +202,38 @@ module ForemanNutanix
       vm.save
 
       Rails.logger.info "=== NUTANIX: CREATE_VM returning VM: #{vm} ==="
-      find_vm_by_uuid(vm.identity)
+      result_vm = find_vm_by_uuid(vm.identity)
+
+      # Auto-exit build mode since we're creating bare VMs without OS installation
+      # This prevents the "Cancel Build" button from appearing
+      if args[:provision_method] == 'image' || true  # Always exit build mode for now
+        Rails.logger.info "=== NUTANIX: Auto-exiting build mode for bare VM provisioning ==="
+        # Note: The host object will be available in the orchestration queue
+        # and will automatically exit build mode after VM creation completes
+      end
+
+      result_vm
     rescue StandardError => e
       Rails.logger.error "=== NUTANIX: CREATE_VM ERROR: #{e.message} ==="
       raise e
+    end
+
+    # Called by Foreman after host orchestration completes
+    # This is where we exit build mode for bare VM provisioning
+    def setHostForOrchestration(host)
+      Rails.logger.info "=== NUTANIX: setHostForOrchestration called for host: #{host.name} ==="
+      super if defined?(super)
+
+      # Auto-exit build mode for bare VM provisioning
+      # Since we're not installing an OS, the host will never callback naturally
+      if host && host.build?
+        Rails.logger.info "=== NUTANIX: Auto-exiting build mode for host #{host.name} ==="
+        host.build = false
+        host.save!
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error in setHostForOrchestration: #{e.message} ==="
+      # Don't fail the whole provisioning if this fails
     end
 
     # New VM instance (not persisted)

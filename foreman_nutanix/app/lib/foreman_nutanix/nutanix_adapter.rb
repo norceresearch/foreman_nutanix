@@ -47,7 +47,8 @@ module ForemanNutanix
             memory: memory_gb,
             power_state: data['power_state'],
             mac_address: data['mac_address'],
-            ip_addresses: data['ip_addresses'] || []
+            ip_addresses: data['ip_addresses'] || [],
+            create_time: data['create_time']
           })
           vm.instance_variable_set(:@persisted, true)
           vm
@@ -88,7 +89,8 @@ module ForemanNutanix
             memory: memory_gb,
             power_state: vm_data['power_state'],
             mac_address: vm_data['mac_address'],
-            ip_addresses: vm_data['ip_addresses'] || []
+            ip_addresses: vm_data['ip_addresses'] || [],
+            create_time: vm_data['create_time']
           })
           vm.instance_variable_set(:@persisted, true)
           vm

@@ -4,7 +4,7 @@ module ForemanNutanix
     attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
     attr_accessor :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description
     attr_accessor :network_id, :storage_container, :disk_size_gb, :power_on
-    attr_accessor :mac_address, :vm_ip_addresses
+    attr_accessor :mac_address, :vm_ip_addresses, :create_time
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -38,6 +38,7 @@ module ForemanNutanix
       # VM details from Nutanix
       @mac_address = args[:mac_address]
       @vm_ip_addresses = args[:ip_addresses] || []
+      @create_time = args[:create_time]
     end
 
     # Required by Foreman - indicates if VM exists
@@ -245,8 +246,18 @@ module ForemanNutanix
     # Required by Foreman - creation timestamp
     def creation_timestamp
       Rails.logger.info "=== NUTANIX: NutanixCompute::creation_timestamp called ==="
-      # We don't have creation time from the API yet, return nil
-      nil
+      return nil unless @create_time
+
+      begin
+        if @create_time.is_a?(String)
+          Time.parse(@create_time)
+        else
+          @create_time
+        end
+      rescue StandardError => e
+        Rails.logger.error "=== NUTANIX: Error parsing create_time: #{e.message} ==="
+        nil
+      end
     end
 
     # Required by Foreman - image name for display

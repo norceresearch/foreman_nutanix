@@ -399,6 +399,7 @@ class VmListMetadata:
     memory_size_bytes: None | int
     mac_address: None | str
     ip_addresses: list[str]
+    create_time: None | datetime.datetime
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -436,6 +437,7 @@ class VmListMetadata:
             memory_size_bytes=vm.memory_size_bytes,
             mac_address=mac_address,
             ip_addresses=ip_addresses,
+            create_time=vm.create_time if hasattr(vm, 'create_time') else None,
         )
 
 
@@ -456,6 +458,7 @@ class VmDetailsMetadata:
     memory_size_bytes: None | int
     mac_address: None | str
     ip_addresses: list[str]
+    create_time: None | datetime.datetime
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -493,6 +496,7 @@ class VmDetailsMetadata:
             memory_size_bytes=vm.memory_size_bytes,
             mac_address=mac_address,
             ip_addresses=ip_addresses,
+            create_time=vm.create_time if hasattr(vm, 'create_time') else None,
         )
 
 
