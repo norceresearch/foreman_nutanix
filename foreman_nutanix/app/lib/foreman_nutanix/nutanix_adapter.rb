@@ -52,17 +52,17 @@ module ForemanNutanix
           })
           vm.instance_variable_set(:@persisted, true)
           vm
+        elsif response.code == '404'
+          Rails.logger.warn "=== NUTANIX: VM not found (deleted from Nutanix?): #{uuid} ==="
+          # Return nil so Foreman knows the VM doesn't exist
+          nil
         else
-          Rails.logger.error "=== NUTANIX: ServersCollection::get failed: #{response.code} ==="
-          vm = NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
-          vm.instance_variable_set(:@persisted, true)
-          vm
+          Rails.logger.error "=== NUTANIX: ServersCollection::get failed: #{response.code} - #{response.body} ==="
+          nil
         end
       rescue StandardError => e
         Rails.logger.error "=== NUTANIX: ServersCollection::get error: #{e.message} ==="
-        vm = NutanixCompute.new(@cluster, { identity: uuid, name: uuid })
-        vm.instance_variable_set(:@persisted, true)
-        vm
+        nil
       end
 
       def all(opts = {})
