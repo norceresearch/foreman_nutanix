@@ -91,16 +91,27 @@ jobs:
       name: rubygems
       url: https://rubygems.org/gems/foreman_nutanix
     permissions:
-      contents: write
       id-token: write
+    defaults:
+      run:
+        working-directory: foreman_nutanix
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+      - name: Download gem artifact
+        uses: actions/download-artifact@v4
         with:
-          ruby-version: "3.2"
+          name: ruby-gem
+          path: foreman_nutanix/
 
-      - name: Release gem
-        uses: rubygems/release-gem@v1
+      - name: Configure RubyGems credentials
+        uses: rubygems/configure-rubygems-credentials@v1
+
+      - name: Publish to RubyGems
+        run: |
+          gem push *.gem || {
+            if gem search foreman_nutanix --exact --all | grep -q "$(ls *.gem | sed 's/foreman_nutanix-\(.*\)\.gem/\1/')"; then
+              echo "Version already published, skipping"
+            else
+              exit 1
+            fi
+          }
