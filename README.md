@@ -1,5 +1,7 @@
 # foreman_nutanix
 
+[![Nutanix Shim Server CI](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml/badge.svg)](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml)
+
 Foreman plugin to create compute resource and (de)provision hosts using [Nutanix](https://www.nutanix.com/).
 
 ---
