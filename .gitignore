@@ -1,0 +1,93 @@
+# Dependencies
+node_modules/
+vendor/bundle/
+.bundle/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+secrets.yml
+config/settings.local.yml
+config/database.yml
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Ruby / Rails
+log/*.log
+tmp/
+storage/
+public/assets/
+public/packs/
+.byebug_history
+*.gem
+.ruby-version
+.ruby-gemset
+coverage/
+spec/reports/
+test/tmp/
+test/version_tmp/
+
+# Foreman plugin specific
+pkg/
+bundler_stubs/
+
+# Python / FastAPI
+*.py[cod]
+*$py.class
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+pyrightconfig.json
+
+# Jupyter notebooks (if any)
+.ipynb_checkpoints/
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Misc
+*.bak
+*.tmp
+*.temp
