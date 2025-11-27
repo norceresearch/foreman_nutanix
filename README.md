@@ -6,8 +6,8 @@ Foreman plugin to create compute resource and (de)provision hosts using [Nutanix
 
 ---
 
-NOTE: This is a WIP and will not be shocking to find broken features, dead code, and generally not amazing Ruby code
-specifically. First time writing Ruby... :)
+_NOTE: This is a WIP and will not be shocking to find broken features, dead code, 
+and probably not the best Ruby coding you've ever seen._
 
 ---
 
@@ -18,23 +18,47 @@ and re-implementing an SDK wasn't appealing. It should make it easier to upgrade
 
 #### Shim Server
 
-Until we publish via PyPI, one can install from source.
+Requires these env vars set:
+```bash
+export NUTANIX_API_KEY=...someApiKey...
+export NUTANIX_HOST=..some.host.com...
+```
+###### From PyPI:
+
+https://pypi.org/project/nutanix-shim-server/
+
+```
+pip install nutanix-shim-server
+nutanix-shim-server --port 8000
+```
+
+###### From source:
 Assuming you can use [uv](https://github.com/astral-sh/uv), it'll look something like this:
 
 ```bash
 uv pip install .
-export NUTANIX_API_KEY=...someApiKey...
-export NUTANIX_HOST=..some.host.com...
 uv run nutanix-shim-server --port 8000
 ```
+---
 
 #### Foreman Plugin
 
-Should be able to be installed as normal using path in the Gemfile, until we publish it as a Gem itself.
-
+Requires this env var set:
 ```bash
+export NUTANIX_SHIM_SERVER_ADDR=https://nutanix-shim-server-addr
+```
+
+###### From Ruby Gems:
+
+https://rubygems.org/gems/foreman_nutanix
+
+```ruby
+gem 'foreman_nutanix'
+```
+
+###### From Source:
+
+```ruby
 # Gemfile
 gem 'foreman_nutanix', :path => '/path/to/repo/foreman_nutanix/foreman_nutanix'
 ```
-
-And export `NUTANIX_SHIM_SERVER_ADDR=https://my-nutanix-host-addr`
