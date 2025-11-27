@@ -1,5 +1,7 @@
 # foreman_nutanix
 
+[![Nutanix Shim Server CI](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml/badge.svg)](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml)
+
 Foreman plugin to create compute resource and (de)provision hosts using [Nutanix](https://www.nutanix.com/).
 
 ---
@@ -23,7 +25,7 @@ Assuming you can use [uv](https://github.com/astral-sh/uv), it'll look something
 uv pip install .
 export NUTANIX_API_KEY=...someApiKey...
 export NUTANIX_HOST=..some.host.com...
-uv run fastapi run src/nutanix_shim_server/server.py
+uv run nutanix-shim-server --port 8000
 ```
 
 #### Foreman Plugin
