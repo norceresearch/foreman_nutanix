@@ -1,10 +1,7 @@
 module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :cluster, :args
-    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state
-    attr_accessor :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description
-    attr_accessor :network_id, :storage_container, :disk_size_gb, :power_on
-    attr_accessor :mac_address, :vm_ip_addresses, :create_time
+    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state, :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description, :network_id, :storage_container, :disk_size_gb, :power_on, :mac_address, :vm_ip_addresses, :create_time
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -27,13 +24,13 @@ module ForemanNutanix
       @network_id = args[:network_id] || args[:network]
       @storage_container = args[:storage_container]
       @disk_size_gb = args[:disk_size_gb] || 50
-      @power_on = args.key?(:power_on) ? args[:power_on] : true  # Default to true
+      @power_on = args.key?(:power_on) ? args[:power_on] : true # Default to true
       @subnet_ext_id = args[:subnet_ext_id] || @network_id
       @storage_container_ext_id = args[:storage_container_ext_id] || @storage_container
       @num_sockets = args[:num_sockets] || 1
       @num_cores_per_socket = args[:num_cores_per_socket] || @cpus
       @disk_size_bytes = args[:disk_size_bytes] || (@disk_size_gb.to_i * 1024**3)
-      @description = args[:description] || ""
+      @description = args[:description] || ''
 
       # VM details from Nutanix
       @mac_address = args[:mac_address]
@@ -43,13 +40,13 @@ module ForemanNutanix
 
     # Required by Foreman - indicates if VM exists
     def persisted?
-      Rails.logger.info "=== NUTANIX: NutanixCompute::persisted? called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::persisted? called ==='
       @persisted
     end
 
     # Required by Foreman - save the VM (actually create it)
     def save
-      Rails.logger.info "=== NUTANIX: NutanixCompute::save called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::save called ==='
       Rails.logger.info "=== NUTANIX: VM attributes - network_id: #{@network_id}, storage_container: #{@storage_container}, subnet_ext_id: #{@subnet_ext_id}, storage_container_ext_id: #{@storage_container_ext_id} ==="
 
       # Build the provision request payload
@@ -63,10 +60,10 @@ module ForemanNutanix
 
       # Validate required fields
       if actual_subnet.nil? || actual_subnet.to_s.strip.empty?
-        raise StandardError, "Network/Subnet is required for VM provisioning"
+        raise StandardError, 'Network/Subnet is required for VM provisioning'
       end
       if actual_storage.nil? || actual_storage.to_s.strip.empty?
-        raise StandardError, "Storage Container is required for VM provisioning"
+        raise StandardError, 'Storage Container is required for VM provisioning'
       end
 
       provision_request = {
@@ -78,8 +75,8 @@ module ForemanNutanix
         num_cores_per_socket: @num_cores_per_socket.to_i,
         memory_size_bytes: memory_bytes,
         disk_size_bytes: actual_disk_bytes.to_i,
-        description: @description || "",
-        power_on: @power_on.nil? ? true : @power_on  # Default to true if not set
+        description: @description || '',
+        power_on: @power_on.nil? || @power_on, # Default to true if not set
       }
 
       Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="
@@ -136,15 +133,15 @@ module ForemanNutanix
 
       # Map Nutanix power states to Foreman-friendly states
       result = case @power_state
-      when 'ON'
-        'running'
-      when 'OFF'
-        'stopped'
-      when 'PAUSED'
-        'paused'
-      else
-        'unknown'
-      end
+               when 'ON'
+                 'running'
+               when 'OFF'
+                 'stopped'
+               when 'PAUSED'
+                 'paused'
+               else
+                 'unknown'
+               end
       Rails.logger.info "=== NUTANIX: NutanixCompute::state returning '#{result}' ==="
       result
     end
@@ -152,7 +149,7 @@ module ForemanNutanix
 
     # Required by Foreman - reload VM state
     def reload
-      Rails.logger.info "=== NUTANIX: NutanixCompute::reload called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::reload called ==='
       self
     end
 
@@ -228,13 +225,13 @@ module ForemanNutanix
 
     # Required by Foreman - CPU count
     def cpu
-      Rails.logger.info "=== NUTANIX: NutanixCompute::cpu called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::cpu called ==='
       @cpus.to_s
     end
 
     # Required by Foreman - memory in GB
     def memory
-      Rails.logger.info "=== NUTANIX: NutanixCompute::memory called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::memory called ==='
       @memory
     end
 
@@ -245,7 +242,7 @@ module ForemanNutanix
 
     # Required by Foreman - creation timestamp
     def creation_timestamp
-      Rails.logger.info "=== NUTANIX: NutanixCompute::creation_timestamp called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::creation_timestamp called ==='
       return nil unless @create_time
 
       begin
@@ -262,14 +259,14 @@ module ForemanNutanix
 
     # Required by Foreman - image name for display
     def pretty_image_name
-      Rails.logger.info "=== NUTANIX: NutanixCompute::pretty_image_name called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::pretty_image_name called ==='
       # We don't track the source image yet
       nil
     end
 
     # Required by Foreman - public IP address
     def vm_ip_address
-      Rails.logger.info "=== NUTANIX: NutanixCompute::vm_ip_address called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::vm_ip_address called ==='
       return nil unless persisted?
       @vm_ip_addresses&.first
     end
@@ -277,15 +274,15 @@ module ForemanNutanix
 
     # Required by Foreman - private IP address
     def private_ip_address
-      Rails.logger.info "=== NUTANIX: NutanixCompute::private_ip_address called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::private_ip_address called ==='
       return nil unless persisted?
       # Return second IP if available, otherwise same as public
-      @vm_ip_addresses&.length.to_i > 1 ? @vm_ip_addresses[1] : @vm_ip_addresses&.first
+      (@vm_ip_addresses&.length.to_i > 1) ? @vm_ip_addresses[1] : @vm_ip_addresses&.first
     end
 
     # Required by Foreman - all IP addresses
     def ip_addresses
-      Rails.logger.info "=== NUTANIX: NutanixCompute::ip_addresses called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::ip_addresses called ==='
       persisted? ? (@vm_ip_addresses || []) : []
     end
 
@@ -304,41 +301,41 @@ module ForemanNutanix
 
     # Required by Foreman - VM description
     def vm_description
-      Rails.logger.info "=== NUTANIX: NutanixCompute::vm_description called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::vm_description called ==='
       pretty_machine_type
     end
 
     # Required by Foreman - pretty machine type
     def pretty_machine_type
-      Rails.logger.info "=== NUTANIX: NutanixCompute::pretty_machine_type called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::pretty_machine_type called ==='
       "#{@cpus} CPUs, #{memory}GB RAM"
     end
 
     # Required by Foreman - volumes/disks
     def volumes
-      Rails.logger.info "=== NUTANIX: NutanixCompute::volumes called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::volumes called ==='
       [OpenStruct.new({ name: 'disk-1', size_gb: 20 })]
     end
 
     # Required by Foreman - volumes_attributes setter
     def volumes_attributes=(_attrs)
-      Rails.logger.info "=== NUTANIX: NutanixCompute::volumes_attributes= called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::volumes_attributes= called ==='
     end
 
     # Required by Foreman - network interfaces
     def interfaces
-      Rails.logger.info "=== NUTANIX: NutanixCompute::interfaces called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::interfaces called ==='
       [OpenStruct.new({
         name: 'eth0',
         network: @network,
         mac: @mac_address,
-        ip: @vm_ip_addresses&.first
+        ip: @vm_ip_addresses&.first,
       })]
     end
 
     # Required by Foreman - network interfaces access
     def network_interfaces
-      Rails.logger.info "=== NUTANIX: NutanixCompute::network_interfaces called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::network_interfaces called ==='
       interfaces
     end
 
@@ -352,21 +349,22 @@ module ForemanNutanix
 
     # Required by Foreman - console/serial output
     def serial_port_output
-      Rails.logger.info "=== NUTANIX: NutanixCompute::serial_port_output called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::serial_port_output called ==='
       "Mock serial console output for #{@name}"
     end
 
     # Required by Foreman - wait for condition
-    def wait_for(&block)
-      Rails.logger.info "=== NUTANIX: NutanixCompute::wait_for called ==="
+    def wait_for
+      Rails.logger.info '=== NUTANIX: NutanixCompute::wait_for called ==='
       yield if block_given?
     end
 
     # Required by Foreman - destroy VM
     def destroy
-      Rails.logger.info "=== NUTANIX: NutanixCompute::destroy called ==="
+      Rails.logger.info '=== NUTANIX: NutanixCompute::destroy called ==='
       @persisted = false
       true
     end
   end
 end
+

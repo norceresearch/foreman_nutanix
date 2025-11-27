@@ -28,7 +28,7 @@
   </tr>
   <tr>
     <td>User Data Support</td>
-    <td><%= @compute_resource.user_data_supported? ? 'Yes' : 'No' %></td>
+    <td><%= @compute_resource.user_data_supported? ? "Yes" : "No" %></td>
   </tr>
   <tr>
     <td>Shim Server URL</td>
@@ -45,10 +45,17 @@
   <tr>
     <td>Resource Counts</td>
     <td>
-      <strong>Networks:</strong> <%= @compute_resource.available_networks.count %> |
-      <strong>Storage Containers:</strong> <%= @compute_resource.available_storage_containers.count %> |
-      <strong>Images:</strong> <%= @compute_resource.available_images.count %> |
-      <strong>Flavors:</strong> <%= @compute_resource.available_flavors.count %>
+      <strong>Networks:</strong>
+      <%= @compute_resource.available_networks.count %>
+      |
+      <strong>Storage Containers:</strong>
+      <%= @compute_resource.available_storage_containers.count %>
+      |
+      <strong>Images:</strong>
+      <%= @compute_resource.available_images.count %>
+      |
+      <strong>Flavors:</strong>
+      <%= @compute_resource.available_flavors.count %>
     </td>
   </tr>
 </table>
@@ -102,7 +109,7 @@
             <td><%= container.name %></td>
             <td><%= (container.max_capacity_bytes.to_f / 1024**3).round(2) %></td>
             <td><%= container.replication_factor %>x</td>
-            <td><%= container.is_compression_enabled ? 'Yes' : 'No' %></td>
+            <td><%= container.is_compression_enabled ? "Yes" : "No" %></td>
           </tr>
         <% end %>
         <% if @compute_resource.available_storage_containers.empty? %>
@@ -133,17 +140,28 @@
     <tbody>
       <tr>
         <td><strong>CPU</strong></td>
-        <td><%= (stats.cpu_capacity_hz.to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_total %> cores</td>
-        <td><%= (stats.cpu_usage_hz.to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_usage %> cores</td>
-        <td><%= ((stats.cpu_capacity_hz - stats.cpu_usage_hz).to_f / 1_000_000_000).round(2) %> GHz / <%= stats.cpu_cores_total - stats.cpu_cores_usage %> cores</td>
+        <td><%= (stats.cpu_capacity_hz.to_f / 1_000_000_000).round(2) %>
+          GHz /
+          <%= stats.cpu_cores_total %>
+          cores</td>
+        <td><%= (stats.cpu_usage_hz.to_f / 1_000_000_000).round(2) %>
+          GHz /
+          <%= stats.cpu_cores_usage %>
+          cores</td>
+        <td><%= ((stats.cpu_capacity_hz - stats.cpu_usage_hz).to_f / 1_000_000_000).round(2) %>
+          GHz /
+          <%= stats.cpu_cores_total - stats.cpu_cores_usage %>
+          cores</td>
         <td>
           <div class="progress" style="margin-bottom: 0;">
-            <div class="progress-bar <%= stats.cpu_usage_percent > 80 ? 'progress-bar-danger' : stats.cpu_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
-                 role="progressbar"
-                 aria-valuenow="<%= stats.cpu_usage_percent %>"
-                 aria-valuemin="0"
-                 aria-valuemax="100"
-                 style="width: <%= stats.cpu_usage_percent %>%">
+            <div
+              class="progress-bar <%= stats.cpu_usage_percent > 80 ? 'progress-bar-danger' : stats.cpu_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
+              role="progressbar"
+              aria-valuenow="<%= stats.cpu_usage_percent %>"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              style="width: <%= stats.cpu_usage_percent %>%"
+            >
               <%= stats.cpu_usage_percent %>%
             </div>
           </div>
@@ -151,17 +169,24 @@
       </tr>
       <tr>
         <td><strong>Memory</strong></td>
-        <td><%= (stats.memory_capacity_bytes.to_f / 1024**3).round(2) %> GB</td>
-        <td><%= (stats.memory_usage_bytes.to_f / 1024**3).round(2) %> GB</td>
-        <td><%= ((stats.memory_capacity_bytes - stats.memory_usage_bytes).to_f / 1024**3).round(2) %> GB</td>
+        <td><%= (stats.memory_capacity_bytes.to_f / 1024**3).round(2) %>
+          GB</td>
+        <td><%= (stats.memory_usage_bytes.to_f / 1024**3).round(2) %>
+          GB</td>
+        <td><%= ((stats.memory_capacity_bytes - stats.memory_usage_bytes).to_f / 1024**3).round(
+            2,
+          ) %>
+          GB</td>
         <td>
           <div class="progress" style="margin-bottom: 0;">
-            <div class="progress-bar <%= stats.memory_usage_percent > 80 ? 'progress-bar-danger' : stats.memory_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
-                 role="progressbar"
-                 aria-valuenow="<%= stats.memory_usage_percent %>"
-                 aria-valuemin="0"
-                 aria-valuemax="100"
-                 style="width: <%= stats.memory_usage_percent %>%">
+            <div
+              class="progress-bar <%= stats.memory_usage_percent > 80 ? 'progress-bar-danger' : stats.memory_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
+              role="progressbar"
+              aria-valuenow="<%= stats.memory_usage_percent %>"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              style="width: <%= stats.memory_usage_percent %>%"
+            >
               <%= stats.memory_usage_percent %>%
             </div>
           </div>
@@ -169,17 +194,24 @@
       </tr>
       <tr>
         <td><strong>Storage</strong></td>
-        <td><%= (stats.storage_capacity_bytes.to_f / 1024**4).round(2) %> TB</td>
-        <td><%= (stats.storage_usage_bytes.to_f / 1024**4).round(2) %> TB</td>
-        <td><%= ((stats.storage_capacity_bytes - stats.storage_usage_bytes).to_f / 1024**4).round(2) %> TB</td>
+        <td><%= (stats.storage_capacity_bytes.to_f / 1024**4).round(2) %>
+          TB</td>
+        <td><%= (stats.storage_usage_bytes.to_f / 1024**4).round(2) %>
+          TB</td>
+        <td><%= (
+            (stats.storage_capacity_bytes - stats.storage_usage_bytes).to_f / 1024**4
+          ).round(2) %>
+          TB</td>
         <td>
           <div class="progress" style="margin-bottom: 0;">
-            <div class="progress-bar <%= stats.storage_usage_percent > 80 ? 'progress-bar-danger' : stats.storage_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
-                 role="progressbar"
-                 aria-valuenow="<%= stats.storage_usage_percent %>"
-                 aria-valuemin="0"
-                 aria-valuemax="100"
-                 style="width: <%= stats.storage_usage_percent %>%">
+            <div
+              class="progress-bar <%= stats.storage_usage_percent > 80 ? 'progress-bar-danger' : stats.storage_usage_percent > 60 ? 'progress-bar-warning' : 'progress-bar-success' %>"
+              role="progressbar"
+              aria-valuenow="<%= stats.storage_usage_percent %>"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              style="width: <%= stats.storage_usage_percent %>%"
+            >
               <%= stats.storage_usage_percent %>%
             </div>
           </div>

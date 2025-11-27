@@ -15,12 +15,12 @@ module ForemanNutanix
     end
 
     def capabilities
-      [:build, :power]
+      %i[build power]
     end
 
     # Foreman checks this for power management support
     def supports_power?
-      Rails.logger.info "=== NUTANIX: supports_power? called ==="
+      Rails.logger.info '=== NUTANIX: supports_power? called ==='
       true
     end
 
@@ -194,7 +194,11 @@ module ForemanNutanix
     # Core provisioning method - this is what Foreman calls to create a VM
     def create_vm(args = {})
       Rails.logger.info "=== NUTANIX: CREATE_VM CALLED with args: #{args} ==="
-      Rails.logger.info "=== NUTANIX: CREATE_VM args class: #{args.class}, keys: #{args.keys rescue 'N/A'} ==="
+      Rails.logger.info "=== NUTANIX: CREATE_VM args class: #{args.class}, keys: #{begin
+        args.keys
+      rescue StandardError
+        'N/A'
+      end} ==="
       Rails.logger.info "=== NUTANIX: CREATE_VM network_id: #{args[:network_id] || args['network_id']}, storage_container: #{args[:storage_container] || args['storage_container']} ==="
 
       vm = new_vm(args)
@@ -206,9 +210,9 @@ module ForemanNutanix
 
       # Auto-exit build mode since we're creating bare VMs without OS installation
       # This prevents the "Cancel Build" button from appearing
-      if args[:provision_method] == 'image' || true  # Always exit build mode for now
-        Rails.logger.info "=== NUTANIX: Auto-exiting build mode for bare VM provisioning ==="
-        # Note: The host object will be available in the orchestration queue
+      if args[:provision_method] == 'image' || true # Always exit build mode for now
+        Rails.logger.info '=== NUTANIX: Auto-exiting build mode for bare VM provisioning ==='
+        # NOTE: The host object will be available in the orchestration queue
         # and will automatically exit build mode after VM creation completes
       end
 
@@ -251,6 +255,7 @@ module ForemanNutanix
     end
 
     # Default attributes for new VMs
+    # TODO: This is almost certainly wrong, namely 'zone' is not relevent.
     def vm_instance_defaults
       Rails.logger.info '=== NUTANIX: VM_INSTANCE_DEFAULTS called ==='
       {
@@ -346,7 +351,7 @@ module ForemanNutanix
         state = data['power_state']
         Rails.logger.info "=== NUTANIX: VM_POWER_STATE returning: #{state} ==="
         # Return hash that Foreman expects
-        { state: state == 'ON' ? 'running' : 'off' }
+        { state: (state == 'ON') ? 'running' : 'off' }
       else
         { state: 'unknown' }
       end
@@ -407,6 +412,7 @@ module ForemanNutanix
     end
 
     # Console access
+    # TODO: Untested, probably doesn't work
     def console(uuid)
       Rails.logger.info "=== NUTANIX: CONSOLE CALLED with uuid: #{uuid} ==="
       vm = find_vm_by_uuid(uuid)
@@ -428,6 +434,7 @@ module ForemanNutanix
     end
 
     # New volume creation
+    # TODO: Not sure we can create new volumes in Nutanix?
     def new_volume(attrs = {})
       Rails.logger.info "=== NUTANIX: NEW_VOLUME CALLED with attrs: #{attrs} ==="
       OpenStruct.new(attrs)

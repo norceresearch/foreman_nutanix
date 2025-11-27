@@ -3,47 +3,79 @@
 <table class="table table-bordered table-striped table-condensed">
   <tbody>
     <tr>
-      <td><%= _('Name') %></td>
+      <td><%= _("Name") %></td>
       <td><%= @vm.name %></td>
     </tr>
     <tr>
-      <td><%= _('Created') %></td>
-      <td><%= @vm.creation_timestamp ? date_time_relative(@vm.creation_timestamp) : _('Not available') %></td>
+      <td><%= _("Created") %></td>
+      <td><%= if @vm.creation_timestamp
+          date_time_relative(@vm.creation_timestamp)
+        else
+          _("Not available")
+        end %></td>
     </tr>
     <tr>
-      <td><%= _('Status') %></td>
+      <td><%= _("Status") %></td>
       <td><%= @vm.state %></td>
     </tr>
     <tr>
-      <td><%= _('Power State') %></td>
-      <td><%= @vm.power_state || _('Unknown') %></td>
+      <td><%= _("Power State") %></td>
+      <td><%= @vm.power_state || _("Unknown") %></td>
     </tr>
     <tr>
-      <td><%= _('CPUs') %></td>
+      <td><%= _("CPUs") %></td>
       <td><%= @vm.cpu %></td>
     </tr>
     <tr>
-      <td><%= _('Memory') %></td>
-      <td><%= @vm.memory %> GB</td>
+      <td><%= _("Memory") %></td>
+      <td><%= @vm.memory %>
+        GB</td>
     </tr>
     <tr>
-      <td><%= _('MAC Address') %></td>
-      <td><%= @vm.mac || _('Not available') %></td>
+      <td><%= _("MAC Address") %></td>
+      <td><%= @vm.mac || _("Not available") %></td>
     </tr>
     <tr>
-      <td><%= _('IP Addresses') %></td>
-      <td><%= @vm.ip_addresses.join(', ') if @vm.ip_addresses.any? %></td>
+      <td><%= _("IP Addresses") %></td>
+      <td><%= @vm.ip_addresses.join(", ") if @vm.ip_addresses.any? %></td>
     </tr>
   </tbody>
 </table>
 
 <% if @vm.ready? %>
-  <%= link_to_if_authorized _("Power Off"), hash_for_power_compute_resource_vm_path(:compute_resource_id => @compute_resource, :id => @vm.identity).merge(:auth_object => @compute_resource, :permission => 'power_compute_resources_vms'),
-    :confirm => _('Are you sure?'), :method => :put, :class => "btn btn-danger" %>
+  <%= link_to_if_authorized _("Power Off"),
+  hash_for_power_compute_resource_vm_path(
+    compute_resource_id: @compute_resource,
+    id: @vm.identity,
+  ).merge(
+    auth_object: @compute_resource,
+    permission: "power_compute_resources_vms",
+  ),
+  confirm: _("Are you sure?"),
+  method: :put,
+  class: "btn btn-danger" %>
 <% else %>
-  <%= link_to_if_authorized _("Power On"), hash_for_power_compute_resource_vm_path(:compute_resource_id => @compute_resource, :id => @vm.identity).merge(:auth_object => @compute_resource, :permission => 'power_compute_resources_vms'),
-    :confirm => _('Are you sure?'), :method => :put, :class => "btn btn-success" %>
+  <%= link_to_if_authorized _("Power On"),
+  hash_for_power_compute_resource_vm_path(
+    compute_resource_id: @compute_resource,
+    id: @vm.identity,
+  ).merge(
+    auth_object: @compute_resource,
+    permission: "power_compute_resources_vms",
+  ),
+  confirm: _("Are you sure?"),
+  method: :put,
+  class: "btn btn-success" %>
 <% end %>
 
-<%= link_to_if_authorized _("Delete"), hash_for_compute_resource_vm_path(:compute_resource_id => @compute_resource, :id => @vm.identity).merge(:auth_object => @compute_resource, :permission => 'destroy_compute_resources_vms'),
-  :confirm => _('Are you sure?'), :method => :delete, :class => "btn btn-danger" %>
+<%= link_to_if_authorized _("Delete"),
+hash_for_compute_resource_vm_path(
+  compute_resource_id: @compute_resource,
+  id: @vm.identity,
+).merge(
+  auth_object: @compute_resource,
+  permission: "destroy_compute_resources_vms",
+),
+confirm: _("Are you sure?"),
+method: :delete,
+class: "btn btn-danger" %>

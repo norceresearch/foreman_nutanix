@@ -3,7 +3,6 @@ module ForemanNutanix
     extend ActiveSupport::Concern
 
     included do
-      # Add any callbacks or validations here if needed
     end
 
     def ip_addresses
@@ -11,6 +10,7 @@ module ForemanNutanix
       vm&.ip_addresses || ['192.168.1.100', '10.0.0.100']
     end
 
+    # TODO: Hard-coded should probably be removed
     def vm_ip_address
       Rails.logger.info "=== NUTANIX: HOST::vm_ip_address called, vm: #{vm.inspect} ==="
       vm&.vm_ip_address || '192.168.1.100'
@@ -18,7 +18,7 @@ module ForemanNutanix
 
     # Override provisioning methods to add debugging
     def provision_method
-      Rails.logger.info "=== NUTANIX: HOST::provision_method called ==="
+      Rails.logger.info '=== NUTANIX: HOST::provision_method called ==='
       super
     end
 
@@ -35,3 +35,4 @@ module ForemanNutanix
     end
   end
 end
+

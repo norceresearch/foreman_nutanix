@@ -1,48 +1,72 @@
 <%= compute_specific_js(compute_resource, "host_edit") %>
 <%= javascript "hosts", "host_edit", "host_edit_interfaces" %>
 
-<%= select_f f, :image_id,
-    compute_resource.available_images,
-    :id, :name,
-    { :include_blank => _('Select Image') },
-    { :label => _('Image'), :help_inline => _('Operating system image to use (optional)') } %>
+<%= select_f f,
+:image_id,
+compute_resource.available_images,
+:id,
+:name,
+{ include_blank: _("Select Image") },
+{
+  label: _("Image"),
+  help_inline: _("Operating system image to use (optional)"),
+} %>
 
-<%= select_f f, :network_id,
-    compute_resource.available_networks,
-    :id, :name,
-    { :include_blank => _('Select Network') },
-    { :label => _('Network'), :help_inline => _('Network/subnet for the VM') } %>
+<%= select_f f,
+:network_id,
+compute_resource.available_networks,
+:id,
+:name,
+{ include_blank: _("Select Network") },
+{ label: _("Network"), help_inline: _("Network/subnet for the VM") } %>
 
-<%= select_f f, :storage_container,
-    compute_resource.available_storage_containers,
-    :id, :name,
-    { :include_blank => _('Select Storage Container') },
-    { :label => _('Storage Container'), :help_inline => _('Storage container for VM disks') } %>
+<%= select_f f,
+:storage_container,
+compute_resource.available_storage_containers,
+:id,
+:name,
+{ include_blank: _("Select Storage Container") },
+{
+  label: _("Storage Container"),
+  help_inline: _("Storage container for VM disks"),
+} %>
 
-<%= select_f f, :machine_type,
-    compute_resource.available_flavors,
-    :id, :name,
-    { :include_blank => _('Select Flavor') },
-    { :label => _('Machine Type'), :help_inline => _('VM size template (optional)') } %>
+<%= select_f f,
+:machine_type,
+compute_resource.available_flavors,
+:id,
+:name,
+{ include_blank: _("Select Flavor") },
+{ label: _("Machine Type"), help_inline: _("VM size template (optional)") } %>
 
-<%= counter_f f, :cpus,
-    { :label => _('CPUs'),
-      :help_inline => _('Number of CPU cores'),
-      :min => 1,
-      :max => 32 } %>
+<%= counter_f f,
+:cpus,
+{ label: _("CPUs"), help_inline: _("Number of CPU cores"), min: 1, max: 32 } %>
 
-<%= counter_f f, :memory,
-    { :label => _('Memory (GB)'),
-      :help_inline => _('Amount of memory in GB'),
-      :min => 1,
-      :max => 64 } %>
+<%= counter_f f,
+:memory,
+{
+  label: _("Memory (GB)"),
+  help_inline: _("Amount of memory in GB"),
+  min: 1,
+  max: 64,
+} %>
 
-<%= text_f f, :disk_size_gb,
-    { :label => _('Disk Size (GB)'),
-      :help_inline => _('Size of the boot disk in GB'),
-      :value => 50 } %>
+<%= text_f f,
+:disk_size_gb,
+{
+  label: _("Disk Size (GB)"),
+  help_inline: _("Size of the boot disk in GB"),
+  value: 50,
+} %>
 
-<%= checkbox_f f, :power_on,
-    { :label => _('Power On After Creation'),
-      :help_inline => _('Automatically power on the VM after it is created. If power-on fails, the VM will be deleted.'),
-      :checked => true } %>
+<%= checkbox_f f,
+:power_on,
+{
+  label: _("Power On After Creation"),
+  help_inline:
+    _(
+      "Automatically power on the VM after it is created. If power-on fails, the VM will be deleted.",
+    ),
+  checked: true,
+} %>

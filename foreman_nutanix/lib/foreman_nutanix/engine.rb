@@ -54,4 +54,3 @@ module ForemanNutanix
     end
   end
 end
-

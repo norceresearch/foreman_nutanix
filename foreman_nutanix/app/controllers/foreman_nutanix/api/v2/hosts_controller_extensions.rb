@@ -11,7 +11,7 @@ module ForemanNutanix
 
         module PowerStatusOverride
           def power_status
-            Rails.logger.info "=== NUTANIX: HostsControllerExtensions::power_status called ==="
+            Rails.logger.info '=== NUTANIX: HostsControllerExtensions::power_status called ==='
 
             # Check if this host uses a Nutanix compute resource
             if @host&.compute_resource.is_a?(ForemanNutanix::Nutanix)
