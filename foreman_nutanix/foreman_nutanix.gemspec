@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.license     = 'GPL-3.0'
   s.authors     = ['The Foreman Team']
   s.email       = ['dev@community.theforeman.org']
-  s.homepage    = 'https://gitlab.intra.norceresearch.no/norce-it/foreman'
+  s.homepage    = 'https://github.com/norceresearch/foreman_nutanix'
   s.summary     = 'Nutanix plugin for Foreman'
   s.description = 'Nutanix compute resource plugin for Foreman'
   s.required_ruby_version = '>= 2.7', '< 4'

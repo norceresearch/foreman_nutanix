@@ -13,10 +13,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.intra.norceresearch.no/NORCE IT/foreman.git"
+    "url": "git@github.com:norceresearch/foreman_nutanix.git"
   },
   "bugs": {
-    "url": "https://gitlab.intra.norceresearch.no/NORCE IT/foreman"
+    "url": "https://github.com/norceresearch/foreman_nutanix"
   },
   "peerDependencies": {
     "@theforeman/vendor": ">= 8.16.0"
