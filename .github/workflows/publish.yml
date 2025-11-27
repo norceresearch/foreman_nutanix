@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Publish Packages
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Build distribution
+  build-python:
+    name: Build Python package
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,10 +35,34 @@ jobs:
           name: python-package-distributions
           path: nutanix-shim-server/dist/
 
+  build-ruby:
+    name: Build Ruby gem
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: foreman_nutanix
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Build gem
+        run: gem build foreman_nutanix.gemspec
+
+      - name: Upload gem artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-gem
+          path: foreman_nutanix/*.gem
+
   publish-to-pypi:
     name: Publish to PyPI
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: build-python
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -55,3 +79,28 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+  publish-to-rubygems:
+    name: Publish to RubyGems
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-ruby
+    runs-on: ubuntu-latest
+    environment:
+      name: rubygems
+      url: https://rubygems.org/gems/foreman_nutanix
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Release gem
+        uses: rubygems/release-gem@v1

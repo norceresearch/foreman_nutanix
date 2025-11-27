@@ -8,8 +8,8 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Build package
+  build-python:
+    name: Build Python package
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,3 +31,24 @@ jobs:
 
       - name: List built artifacts
         run: ls -la dist/
+
+  build-ruby:
+    name: Build Ruby gem
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: foreman_nutanix
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Build gem
+        run: gem build foreman_nutanix.gemspec
+
+      - name: List built artifacts
+        run: ls -la *.gem

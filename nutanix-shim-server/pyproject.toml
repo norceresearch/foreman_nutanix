@@ -1,6 +1,6 @@
 [project]
 name = "nutanix-shim-server"
-version = "0.1.0"
+version = "0.0.1"
 description = "Server for the Foreman Nutanix shim plugin"
 readme = "README.md"
 authors = [

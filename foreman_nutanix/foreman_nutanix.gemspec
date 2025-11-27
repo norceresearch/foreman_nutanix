@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.version     = ForemanNutanix::VERSION
   s.metadata    = { 'is_foreman_plugin' => 'true',
 'rubygems_mfa_required' => 'true' }
-  s.license     = 'GPL-3.0'
+  s.license     = 'MIT'
   s.authors     = ['The Foreman Team']
   s.email       = ['dev@community.theforeman.org']
   s.homepage    = 'https://github.com/norceresearch/foreman_nutanix'
