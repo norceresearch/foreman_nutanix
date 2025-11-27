@@ -16,8 +16,8 @@ Gem::Specification.new do |s|
   s.files = Dir['{app,config,db,lib,locale,webpack}/**/*'] + ['LICENSE', 'Rakefile', 'README.md', 'package.json']
   s.test_files = Dir['test/**/*'] + Dir['webpack/**/__tests__/*.js']
 
-  s.add_dependency 'foreman-tasks', '>=5.0'
+  # s.add_dependency 'foreman-tasks', '>=5.0'
 
   s.add_development_dependency 'rdoc'
-  s.add_development_dependency 'theforeman-rubocop', '~> 0.1.1'
+  # s.add_development_dependency 'theforeman-rubocop', '~> 0.1.1'
 end

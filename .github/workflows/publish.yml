@@ -97,10 +97,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ruby-gem
+          path: foreman_nutanix/
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.2"
 
-      - name: Release gem
-        uses: rubygems/release-gem@v1
+      - uses: rubygems/configure-rubygems-credentials@main
+      - name: Push
+        working-directory: foreman_nutanix
+        run: gem push *.gem || echo "Failed to push, maybe it already exists?"

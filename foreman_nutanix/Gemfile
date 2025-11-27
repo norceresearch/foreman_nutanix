@@ -1,3 +1,7 @@
 source 'https://rubygems.org'
 
 gemspec name: 'foreman_nutanix'
+
+group :development do
+  gem 'rake'
+end

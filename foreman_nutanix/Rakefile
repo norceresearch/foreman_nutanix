@@ -40,6 +40,8 @@ begin
   RuboCop::RakeTask.new
 rescue StandardError => _e
   puts 'Rubocop not loaded.'
+rescue LoadError
+  puts 'Rubocop not loaded.'
 end
 
 task :default do
