@@ -1,6 +1,9 @@
 # foreman_nutanix
 
 [![Nutanix Shim Server CI](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml/badge.svg)](https://github.com/norceresearch/foreman_nutanix/actions/workflows/ci.yml)
+[![Gem Version](https://badge.fury.io/rb/foreman_nutanix.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/foreman_nutanix)
+![PyPI - Version](https://img.shields.io/pypi/v/nutanix-shim-server)
+
 
 Foreman plugin to create compute resource and (de)provision hosts using [Nutanix](https://www.nutanix.com/).
 
