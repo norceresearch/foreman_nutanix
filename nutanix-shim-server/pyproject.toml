@@ -1,12 +1,12 @@
 [project]
 name = "nutanix-shim-server"
-version = "0.0.2"
+version = "0.0.3"
 description = "Server for the Foreman Nutanix shim plugin"
 readme = "README.md"
 authors = [
     { name = "Miles Granger", email = "mgra@norceresearch.no" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.118.0",
     "ntnx-clustermgmt-py-client~=4.0.0",
