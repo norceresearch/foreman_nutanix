@@ -9,6 +9,7 @@ def main() -> None:
     sys.argv = [
         "fastapi",
         "run",
+        "--entrypoint",
         "nutanix_shim_server.server:app",
         *sys.argv[1:],
     ]
