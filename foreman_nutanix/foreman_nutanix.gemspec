@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.metadata    = { 'is_foreman_plugin' => 'true',
 'rubygems_mfa_required' => 'true' }
   s.license     = 'MIT'
-  s.authors     = ['The Foreman Team']
-  s.email       = ['dev@community.theforeman.org']
+  s.authors     = ['Miles Granger']
+  s.email       = ['mgra@norceresearch.no']
   s.homepage    = 'https://github.com/norceresearch/foreman_nutanix'
   s.summary     = 'Nutanix plugin for Foreman'
   s.description = 'Nutanix compute resource plugin for Foreman'
