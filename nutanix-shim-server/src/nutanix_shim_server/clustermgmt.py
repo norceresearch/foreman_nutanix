@@ -26,8 +26,8 @@ class ClusterMgmt:
         self.config.backoff_factor = 3
         self.config.verify_ssl = ctx.nutanix_host_verify_ssl
         self.config.port = ctx.nutanix_host_port
-        self.config.client_certificate_file = ctx.nutanix_host_client_ca_file
-        self.config.root_ca_certificate_file = ctx.nutanix_host_client_ca_file
+        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
+        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
 
     @property
     def client(self) -> cm.ApiClient:
