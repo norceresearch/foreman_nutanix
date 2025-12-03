@@ -8,9 +8,9 @@ def main() -> None:
     """Entry point that wraps fastapi-cli with the app path pre-configured."""
     if "--help" in sys.argv:
         msg = """
-Useage: `nutanix-shim-server` to run server on http using port 8000, all options are passed to `fastapi run`.
+Usage: `nutanix-shim-server` to run server on port 8000 (default) with http, all options are passed to `fastapi run`.
 
-        When used with `--ssl-certfile' and `--ssl-keyfile`, it will run with `uvicon` on https, all options will then be passed to `uvicorn`.
+        When used with `--ssl-certfile' and `--ssl-keyfile`, it will run with `uvicorn` on https, all options will then be passed to `uvicorn`.
         """
         print(msg)
         return
