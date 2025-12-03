@@ -314,7 +314,8 @@ module ForemanNutanix
     # Required by Foreman - volumes/disks
     def volumes
       Rails.logger.info '=== NUTANIX: NutanixCompute::volumes called ==='
-      [OpenStruct.new({ name: 'disk-1', size_gb: 20 })]
+      # [OpenStruct.new({ name: 'disk-1', size_gb: 20 })]
+      []
     end
 
     # Required by Foreman - volumes_attributes setter
@@ -367,4 +368,3 @@ module ForemanNutanix
     end
   end
 end
-
