@@ -31,14 +31,6 @@ compute_resource.available_storage_containers,
   help_inline: _("Storage container for VM disks"),
 } %>
 
-<%= select_f f,
-:machine_type,
-compute_resource.available_flavors,
-:id,
-:name,
-{ include_blank: _("Select Flavor") },
-{ label: _("Machine Type"), help_inline: _("VM size template (optional)") } %>
-
 <%= counter_f f,
 :cpus,
 { label: _("CPUs"), help_inline: _("Number of CPU cores"), min: 1, max: 32 } %>
