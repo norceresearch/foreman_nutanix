@@ -44,12 +44,13 @@ compute_resource.available_storage_containers,
   max: 64,
 } %>
 
-<%= text_f f,
+<%= counter_f f,
 :disk_size_gb,
 {
   label: _("Disk Size (GB)"),
   help_inline: _("Size of the boot disk in GB"),
-  value: 50,
+  min: 2,
+  max: 10_000,
 } %>
 
 <%= checkbox_f f,
