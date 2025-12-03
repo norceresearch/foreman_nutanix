@@ -149,13 +149,6 @@ module ForemanNutanix
       nil
     end
 
-    # Available machine types/flavors
-    def available_flavors
-      Rails.logger.info '=== NUTANIX: Returning available flavors ==='
-      [OpenStruct.new({ id: 'small', name: 'Small (2 CPU, 4GB RAM)' })]
-    end
-    alias_method :machine_types, :available_flavors
-
     # Available images
     def available_images(_opts = {})
       Rails.logger.info '=== NUTANIX: Fetching available images from shim server ==='
