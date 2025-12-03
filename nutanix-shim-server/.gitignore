@@ -4,6 +4,7 @@
 # certs
 *.cer
 *.key
+*.crt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
