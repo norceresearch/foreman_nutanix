@@ -25,6 +25,9 @@ Requires these env vars set:
 ```bash
 export NUTANIX_API_KEY=...someApiKey...
 export NUTANIX_HOST=..some.host.com...
+
+# All others are optional and can be found with:
+nutanix-shim-server --help
 ```
 
 ###### From PyPI
@@ -52,6 +55,12 @@ additional options will be supplied to `fastapi`.
 
 If you want SSL/https, then supply `--ssl-certfile` and `--ssl-keyfile`, it will then
 use `uvicorn` with https, all following options will be supplied to `uvicorn` instead.
+
+###### See available help and possible environment variables with
+
+```
+nutanix-shim-server --help
+```
 
 ---
 

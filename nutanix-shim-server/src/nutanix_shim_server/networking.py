@@ -6,6 +6,8 @@ import logging
 from typing import Self, cast
 import ntnx_networking_py_client as net
 
+from nutanix_shim_server import server
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -19,15 +21,17 @@ except ImportError:
 class Networking:
     config: net.Configuration
 
-    def __init__(self):
+    def __init__(self, ctx: server.Context):
         self.config = net.Configuration()
-        self.config.host = os.environ["NUTANIX_HOST"]
-        self.config.scheme = "https"
-        self.config.set_api_key(os.environ["NUTANIX_API_KEY"])
+        self.config.host = ctx.nutanix_host
+        self.config.scheme = ctx.nutanix_host_scheme
+        self.config.set_api_key(ctx.nutanix_api_key)
         self.config.max_retry_attempts = 3
         self.config.backoff_factor = 3
-        self.config.verify_ssl = False  # TODO: True
-        self.config.port = os.environ.get("NUTANIX_PORT", 9440)
+        self.config.verify_ssl = ctx.nutanix_host_verify_ssl
+        self.config.port = ctx.nutanix_host_port
+        self.config.client_certificate_file = ctx.nutanix_host_client_ca_file
+        self.config.root_ca_certificate_file = ctx.nutanix_host_root_ca_file
 
     @property
     def client(self) -> net.ApiClient:
@@ -91,7 +95,11 @@ class SubnetMetadata:
                 ipv4_config = ip_config.ipv4
                 # Build CIDR notation
                 if ipv4_config.ip_subnet:
-                    ip = cast(str, ipv4_config.ip_subnet.ip.value) if ipv4_config.ip_subnet.ip else None
+                    ip = (
+                        cast(str, ipv4_config.ip_subnet.ip.value)
+                        if ipv4_config.ip_subnet.ip
+                        else None
+                    )
                     prefix = ipv4_config.ip_subnet.prefix_length
                     if ip and prefix:
                         ipv4_subnet = f"{ip}/{prefix}"
@@ -102,14 +110,20 @@ class SubnetMetadata:
 
                 # Get DHCP server
                 if ipv4_config.dhcp_server_address:
-                    dhcp_server_address = cast(str, ipv4_config.dhcp_server_address.value)
+                    dhcp_server_address = cast(
+                        str, ipv4_config.dhcp_server_address.value
+                    )
 
         # Check if cluster_ext_id exists (it might be in cluster_reference)
         cluster_ext_id = None
-        if hasattr(subnet, 'cluster_ext_id'):
-            cluster_ext_id = subnet.cluster_ext_id
-        elif hasattr(subnet, 'cluster_reference') and subnet.cluster_reference:
-            cluster_ext_id = subnet.cluster_reference.ext_id if hasattr(subnet.cluster_reference, 'ext_id') else None
+        if hasattr(subnet, "cluster_ext_id"):
+            cluster_ext_id = subnet.cluster_ext_id  # type: ignore
+        elif hasattr(subnet, "cluster_reference") and subnet.cluster_reference:
+            cluster_ext_id = (
+                subnet.cluster_reference.ext_id
+                if hasattr(subnet.cluster_reference, "ext_id")
+                else None
+            )
 
         return cls(
             ext_id=cast(str, subnet.ext_id),
@@ -126,12 +140,3 @@ class SubnetMetadata:
             is_external=subnet.is_external,
             vpc_reference=subnet.vpc_reference,
         )
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    mgmt = Networking()
-    subnets = mgmt.list_subnets()
-    logger.info(f"Found {len(subnets)} subnets")
-    for subnet in subnets:
-        logger.info(f"  - {subnet.name} ({subnet.ext_id}): {subnet.ipv4_subnet}")

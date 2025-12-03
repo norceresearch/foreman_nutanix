@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import datetime
 import dataclasses
 import enum
@@ -9,6 +8,8 @@ import logging
 from typing import Self, cast
 import ntnx_vmm_py_client as vmm
 import ntnx_prism_py_client as prism
+
+from nutanix_shim_server import server
 
 logger = logging.getLogger(__name__)
 
@@ -23,25 +24,29 @@ except ImportError:
 class VirtualMachineMgmt:
     config: vmm.Configuration
 
-    def __init__(self):
+    def __init__(self, ctx: server.Context):
         self.config = vmm.Configuration()
-        self.config.host = os.environ["NUTANIX_HOST"]
-        self.config.scheme = "https"
-        self.config.set_api_key(os.environ["NUTANIX_API_KEY"])
+        self.config.host = ctx.nutanix_host
+        self.config.scheme = ctx.nutanix_host_scheme
+        self.config.set_api_key(ctx.nutanix_api_key)
         self.config.max_retry_attempts = 3
         self.config.backoff_factor = 3
-        self.config.verify_ssl = False  # TODO: True
-        self.config.port = os.environ.get("NUTANIX_PORT", 9440)
+        self.config.verify_ssl = ctx.nutanix_host_verify_ssl
+        self.config.port = ctx.nutanix_host_port
+        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
+        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
 
         # Prism config for task polling
         self.prism_config = prism.Configuration()
-        self.prism_config.host = os.environ["NUTANIX_HOST"]
-        self.prism_config.scheme = "https"
-        self.prism_config.set_api_key(os.environ["NUTANIX_API_KEY"])
+        self.prism_config.host = ctx.nutanix_host
+        self.prism_config.scheme = ctx.nutanix_host_scheme
+        self.prism_config.set_api_key(ctx.nutanix_api_key)
         self.prism_config.max_retry_attempts = 3
         self.prism_config.backoff_factor = 3
-        self.prism_config.verify_ssl = False
-        self.prism_config.port = os.environ.get("NUTANIX_PORT", 9440)
+        self.prism_config.verify_ssl = ctx.nutanix_host_verify_ssl
+        self.prism_config.port = ctx.nutanix_host_port
+        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
+        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
 
     @property
     def client(self) -> vmm.ApiClient:
@@ -129,7 +134,9 @@ class VirtualMachineMgmt:
             power_state=power_state,
         )
 
-    def set_vm_power_state(self, vm_ext_id: str, action: "PowerAction") -> "VmPowerStateResponse":
+    def set_vm_power_state(
+        self, vm_ext_id: str, action: "PowerAction"
+    ) -> "VmPowerStateResponse":
         """
         Change the power state of a VM.
 
@@ -242,7 +249,7 @@ class VirtualMachineMgmt:
         resp: vmm.CreateVmApiResponse = self.vms_api.create_vm(body=vm_spec)  # type: ignore
 
         # Get task ID - keep the full format including prefix for the tasks API
-        task_ext_id = cast(str, resp.data.ext_id)
+        task_ext_id = cast(str, resp.data.ext_id)  # type: ignore
 
         logger.info(f"Waiting for VM creation task {task_ext_id} to complete...")
 
@@ -253,7 +260,7 @@ class VirtualMachineMgmt:
 
         while elapsed < max_wait_seconds:
             task_resp = self.tasks_api.get_task_by_id(extId=task_ext_id)
-            task = task_resp.data
+            task = task_resp.data  # type: ignore
             status = str(task.status) if task.status else "UNKNOWN"
 
             logger.info(f"Task status: {status}")
@@ -269,7 +276,9 @@ class VirtualMachineMgmt:
                         # Handle power-on if requested
                         if request.power_on:
                             try:
-                                logger.info(f"Power-on requested, powering on VM {vm_ext_id}...")
+                                logger.info(
+                                    f"Power-on requested, powering on VM {vm_ext_id}..."
+                                )
                                 # Fetch VM to get ETag (required for power-on operation)
                                 get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
                                 etag = self.client.get_etag(get_resp)
@@ -284,36 +293,58 @@ class VirtualMachineMgmt:
 
                                 while power_elapsed < power_check_timeout:
                                     try:
-                                        power_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
-                                        vm_data = power_resp.data
-                                        current_power_state = str(vm_data.power_state) if vm_data.power_state else "UNKNOWN"
-                                        logger.info(f"Current power state: {current_power_state}")
+                                        power_resp = self.vms_api.get_vm_by_id(
+                                            extId=vm_ext_id
+                                        )
+                                        vm_data = power_resp.data  # type: ignore
+                                        current_power_state = (
+                                            str(vm_data.power_state)
+                                            if vm_data.power_state
+                                            else "UNKNOWN"
+                                        )
+                                        logger.info(
+                                            f"Current power state: {current_power_state}"
+                                        )
 
                                         if current_power_state == "ON":
-                                            logger.info(f"VM {vm_ext_id} successfully powered on")
+                                            logger.info(
+                                                f"VM {vm_ext_id} successfully powered on"
+                                            )
                                             power_on_verified = True
                                             break
 
                                         time.sleep(power_check_interval)
                                         power_elapsed += power_check_interval
                                     except Exception as check_error:
-                                        logger.warning(f"Error checking power state: {check_error}")
+                                        logger.warning(
+                                            f"Error checking power state: {check_error}"
+                                        )
                                         time.sleep(power_check_interval)
                                         power_elapsed += power_check_interval
 
                                 if not power_on_verified:
                                     # Power-on failed, rollback by deleting the VM
                                     error_msg = f"VM created but failed to power on within {power_check_timeout} seconds"
-                                    logger.error(f"{error_msg}, rolling back by deleting VM {vm_ext_id}")
+                                    logger.error(
+                                        f"{error_msg}, rolling back by deleting VM {vm_ext_id}"
+                                    )
 
                                     try:
                                         # Delete the VM
-                                        get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
+                                        get_resp = self.vms_api.get_vm_by_id(
+                                            extId=vm_ext_id
+                                        )
                                         etag = self.client.get_etag(get_resp)
-                                        self.vms_api.delete_vm_by_id(extId=vm_ext_id, if_match=etag)
-                                        logger.info(f"VM {vm_ext_id} deleted successfully during rollback")
+                                        self.vms_api.delete_vm_by_id(
+                                            extId=vm_ext_id, if_match=etag
+                                        )
+                                        logger.info(
+                                            f"VM {vm_ext_id} deleted successfully during rollback"
+                                        )
                                     except Exception as delete_error:
-                                        logger.error(f"Failed to delete VM during rollback: {delete_error}")
+                                        logger.error(
+                                            f"Failed to delete VM during rollback: {delete_error}"
+                                        )
                                         error_msg += f". Additionally, failed to delete VM: {delete_error}"
 
                                     raise RuntimeError(error_msg)
@@ -324,16 +355,26 @@ class VirtualMachineMgmt:
                             except Exception as power_error:
                                 # Power-on command itself failed, rollback
                                 error_msg = f"Failed to power on VM: {power_error}"
-                                logger.error(f"{error_msg}, rolling back by deleting VM {vm_ext_id}")
+                                logger.error(
+                                    f"{error_msg}, rolling back by deleting VM {vm_ext_id}"
+                                )
 
                                 try:
                                     # Delete the VM
-                                    get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
+                                    get_resp = self.vms_api.get_vm_by_id(
+                                        extId=vm_ext_id
+                                    )
                                     etag = self.client.get_etag(get_resp)
-                                    self.vms_api.delete_vm_by_id(extId=vm_ext_id, if_match=etag)
-                                    logger.info(f"VM {vm_ext_id} deleted successfully during rollback")
+                                    self.vms_api.delete_vm_by_id(
+                                        extId=vm_ext_id, if_match=etag
+                                    )
+                                    logger.info(
+                                        f"VM {vm_ext_id} deleted successfully during rollback"
+                                    )
                                 except Exception as delete_error:
-                                    logger.error(f"Failed to delete VM during rollback: {delete_error}")
+                                    logger.error(
+                                        f"Failed to delete VM during rollback: {delete_error}"
+                                    )
                                     error_msg += f". Additionally, failed to delete VM: {delete_error}"
 
                                 raise RuntimeError(error_msg)
@@ -353,13 +394,19 @@ class VirtualMachineMgmt:
                 raise ValueError("Task succeeded but no VM entity found in response")
 
             elif status == "FAILED":
-                error_msg = task.error_messages if hasattr(task, 'error_messages') else "Unknown error"
+                error_msg = (
+                    task.error_messages
+                    if hasattr(task, "error_messages")
+                    else "Unknown error"
+                )
                 raise ValueError(f"VM creation task failed: {error_msg}")
 
             time.sleep(poll_interval)
             elapsed += poll_interval
 
-        raise TimeoutError(f"VM creation task did not complete within {max_wait_seconds} seconds")
+        raise TimeoutError(
+            f"VM creation task did not complete within {max_wait_seconds} seconds"
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -410,7 +457,9 @@ class VmListMetadata:
         # Extract cluster ext_id from cluster reference
         cluster_ext_id = None
         if hasattr(vm, "cluster") and vm.cluster:
-            cluster_ext_id = vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+            cluster_ext_id = (
+                vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+            )
 
         # Convert power state enum to string
         power_state = str(vm.power_state) if vm.power_state else None
@@ -440,7 +489,7 @@ class VmListMetadata:
             memory_size_bytes=vm.memory_size_bytes,
             mac_address=mac_address,
             ip_addresses=ip_addresses,
-            create_time=vm.create_time if hasattr(vm, 'create_time') else None,
+            create_time=vm.create_time if hasattr(vm, "create_time") else None,
         )
 
 
@@ -469,7 +518,9 @@ class VmDetailsMetadata:
         # Extract cluster ext_id from cluster reference
         cluster_ext_id = None
         if hasattr(vm, "cluster") and vm.cluster:
-            cluster_ext_id = vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+            cluster_ext_id = (
+                vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
+            )
 
         # Convert power state enum to string
         power_state = str(vm.power_state) if vm.power_state else None
@@ -499,7 +550,7 @@ class VmDetailsMetadata:
             memory_size_bytes=vm.memory_size_bytes,
             mac_address=mac_address,
             ip_addresses=ip_addresses,
-            create_time=vm.create_time if hasattr(vm, 'create_time') else None,
+            create_time=vm.create_time if hasattr(vm, "create_time") else None,
         )
 
 
@@ -597,8 +648,3 @@ class VmPowerStateResponse:
     ext_id: str
     name: str
     power_state: str
-
-
-if __name__ == "__main__":
-    mgmt = VirtualMachineMgmt()
-    images = mgmt.list_images()

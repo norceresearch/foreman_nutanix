@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import os
 import dataclasses
 from typing import Self, cast
 import ntnx_clustermgmt_py_client as cm
+
+from nutanix_shim_server import server
 
 try:
     from IPython.terminal.embed import embed
@@ -16,15 +17,17 @@ except ImportError:
 class ClusterMgmt:
     config: cm.Configuration
 
-    def __init__(self):
+    def __init__(self, ctx: server.Context):
         self.config = cm.Configuration()
-        self.config.host = os.environ["NUTANIX_HOST"]
-        self.config.scheme = "https"
-        self.config.set_api_key(os.environ["NUTANIX_API_KEY"])
+        self.config.host = ctx.nutanix_host
+        self.config.scheme = ctx.nutanix_host_scheme
+        self.config.set_api_key(ctx.nutanix_api_key)
         self.config.max_retry_attempts = 3
         self.config.backoff_factor = 3
-        self.config.verify_ssl = False  # TODO: True
-        self.config.port = os.environ.get("NUTANIX_PORT", 9440)
+        self.config.verify_ssl = ctx.nutanix_host_verify_ssl
+        self.config.port = ctx.nutanix_host_port
+        self.config.client_certificate_file = ctx.nutanix_host_client_ca_file
+        self.config.root_ca_certificate_file = ctx.nutanix_host_client_ca_file
 
     @property
     def client(self) -> cm.ApiClient:
@@ -45,7 +48,9 @@ class ClusterMgmt:
 
     def list_storage_containers(self) -> list[StorageContainerMetadata]:
         """Return list of storage containers"""
-        resp: cm.ListStorageContainersApiResponse = self.storage_containers_api.list_storage_containers()
+        resp: cm.ListStorageContainersApiResponse = (
+            self.storage_containers_api.list_storage_containers()
+        )  # type: ignore
         containers: None | list[cm.StorageContainer] = resp.data
         if containers:
             return [
@@ -90,7 +95,9 @@ class ClusterMgmt:
         stats: cm.ClusterStats = stats_resp.data  # type: ignore
 
         # Get hosts to aggregate CPU and memory capacity
-        hosts_resp = self.clusters_api.list_hosts_by_cluster_id(clusterExtId=cluster_ext_id)
+        hosts_resp = self.clusters_api.list_hosts_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        )
         hosts: None | list[cm.Host] = hosts_resp.data  # type: ignore
 
         # Aggregate capacity from all hosts in the cluster
@@ -105,7 +112,9 @@ class ClusterMgmt:
                     total_cpu_capacity_hz += host.cpu_capacity_hz
                 elif host.cpu_frequency_hz and host.number_of_cpu_cores:
                     # Calculate capacity: frequency * number of cores
-                    total_cpu_capacity_hz += host.cpu_frequency_hz * host.number_of_cpu_cores
+                    total_cpu_capacity_hz += (
+                        host.cpu_frequency_hz * host.number_of_cpu_cores
+                    )
 
                 if host.memory_size_bytes:
                     total_memory_capacity_bytes += host.memory_size_bytes
@@ -165,7 +174,9 @@ class StorageContainerMetadata:
     def from_nutanix_storage_container(cls, container: cm.StorageContainer) -> Self:
         """Convert Nutanix SDK StorageContainer to our response model"""
         return cls(
-            ext_id=cast(str, container.container_ext_id),  # Note: SDK uses container_ext_id, not ext_id
+            ext_id=cast(
+                str, container.container_ext_id
+            ),  # Note: SDK uses container_ext_id, not ext_id
             name=cast(str, container.name),
             cluster_name=container.cluster_name,
             cluster_ext_id=container.cluster_ext_id,
@@ -236,31 +247,45 @@ class ClusterResourceStats:
                 # Take the last value from time series
                 last_item = val[-1]
                 # If it's a TimeValuePair object, extract the value
-                if hasattr(last_item, 'value'):
+                if hasattr(last_item, "value"):
                     return last_item.value if last_item.value is not None else 0
                 return last_item
             # Handle TimeValuePair objects directly
-            if hasattr(val, 'value'):
+            if hasattr(val, "value"):
                 return val.value if val.value is not None else 0
             return val
 
         # Extract usage values from stats (storage includes capacity too)
         # CPU: Use hypervisor_cpu_usage_ppm to calculate usage from capacity
-        cpu_usage_ppm = extract_value(stats.hypervisor_cpu_usage_ppm, "hypervisor_cpu_usage_ppm")
-        cpu_usage_hz = int(cpu_capacity_hz * (cpu_usage_ppm / 1_000_000)) if cpu_capacity_hz else 0
+        cpu_usage_ppm = extract_value(
+            stats.hypervisor_cpu_usage_ppm, "hypervisor_cpu_usage_ppm"
+        )
+        cpu_usage_hz = (
+            int(cpu_capacity_hz * (cpu_usage_ppm / 1_000_000)) if cpu_capacity_hz else 0
+        )
         cpu_usage_pct = (cpu_usage_hz / cpu_capacity_hz * 100) if cpu_capacity_hz else 0
 
         # Estimate cores in use based on usage percentage
-        cpu_cores_usage = int(cpu_cores_total * (cpu_usage_pct / 100)) if cpu_cores_total else 0
+        cpu_cores_usage = (
+            int(cpu_cores_total * (cpu_usage_pct / 100)) if cpu_cores_total else 0
+        )
 
         # Memory: overall_memory_usage_bytes from stats, capacity from aggregated hosts
-        memory_usage = extract_value(stats.overall_memory_usage_bytes, "overall_memory_usage_bytes")
-        memory_usage_pct = (memory_usage / memory_capacity_bytes * 100) if memory_capacity_bytes else 0
+        memory_usage = extract_value(
+            stats.overall_memory_usage_bytes, "overall_memory_usage_bytes"
+        )
+        memory_usage_pct = (
+            (memory_usage / memory_capacity_bytes * 100) if memory_capacity_bytes else 0
+        )
 
         # Storage: both capacity and usage from stats
-        storage_capacity = extract_value(stats.storage_capacity_bytes, "storage_capacity_bytes")
+        storage_capacity = extract_value(
+            stats.storage_capacity_bytes, "storage_capacity_bytes"
+        )
         storage_usage = extract_value(stats.storage_usage_bytes, "storage_usage_bytes")
-        storage_usage_pct = (storage_usage / storage_capacity * 100) if storage_capacity else 0
+        storage_usage_pct = (
+            (storage_usage / storage_capacity * 100) if storage_capacity else 0
+        )
 
         return cls(
             ext_id=cast(str, stats.ext_id),

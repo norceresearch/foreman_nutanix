@@ -1,4 +1,8 @@
+from __future__ import annotations
+import ast
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
+import os
 
 from fastapi import FastAPI
 
@@ -10,11 +14,76 @@ from nutanix_shim_server.networking import Networking
 from nutanix_shim_server.routes.networking import router as networking_router
 
 
+@dataclass(frozen=True)
+class Context:
+    nutanix_host: str
+    nutanix_host_scheme: str
+    nutanix_host_verify_ssl: bool
+    nutanix_api_key: str
+    nutanix_host_port: int
+    nutanix_client_certificate_file: None | str
+    nutanix_root_ca_certificate_file: None | str
+
+    _vars = __annotations__
+
+    @classmethod
+    def from_env(cls):
+        return cls(
+            nutanix_host=os.environ["NUTANIX_HOST"],
+            nutanix_api_key=os.environ["NUTANIX_API_KEY"],
+            nutanix_host_scheme=cls.get_nutanix_host_scheme(),
+            nutanix_host_verify_ssl=cls.get_nutanix_host_verify_ssl(),
+            nutanix_host_port=cls.get_nutanix_host_port(),
+            nutanix_client_certificate_file=cls.get_nutanix_client_certificate_file(),
+            nutanix_root_ca_certificate_file=cls.get_nutanix_root_ca_certificate_file(),
+        )
+
+    @staticmethod
+    def state_str() -> str:
+        state = ""
+        for attr in Context._vars:
+            key = attr.upper()
+            value = getattr(Context, f"get_{attr}")()
+            if value is None:
+                value = ""
+            state += f"\n\t{key}={value}"
+        return state
+
+    @staticmethod
+    def get_nutanix_host() -> None | str:
+        return os.getenv("NUTANIX_HOST")
+
+    @staticmethod
+    def get_nutanix_api_key() -> None | str:
+        return os.getenv("NUTANIX_API_KEY")
+
+    @staticmethod
+    def get_nutanix_host_scheme() -> str:
+        return os.getenv("NUTANIX_HOST_SCHEME", "https")
+
+    @staticmethod
+    def get_nutanix_host_verify_ssl() -> bool:
+        return ast.literal_eval(os.environ.get("NUTANIX_HOST_VERIFY_SSL", "True"))
+
+    @staticmethod
+    def get_nutanix_host_port() -> int:
+        return int(os.environ.get("NUTANIX_HOST_PORT", 9440))
+
+    @staticmethod
+    def get_nutanix_client_certificate_file() -> None | str:
+        return os.getenv("NUTANIX_CLIENT_CERTIFICATE_FILE")
+
+    @staticmethod
+    def get_nutanix_root_ca_certificate_file() -> None | str:
+        return os.getenv("NUTANIX_ROOT_CA_CERTIFICATE_FILE")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.clustermgmt = ClusterMgmt()
-    app.state.vmm = VirtualMachineMgmt()
-    app.state.networking = Networking()
+    ctx = Context.from_env()
+    app.state.clustermgmt = ClusterMgmt(ctx)
+    app.state.vmm = VirtualMachineMgmt(ctx)
+    app.state.networking = Networking(ctx)
     yield
 
 
