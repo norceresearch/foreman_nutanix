@@ -46,7 +46,7 @@ class Context:
             value = getattr(Context, f"get_{attr}")()
             if value is None:
                 value = ""
-            state += f"\n\t{key}={value}"
+            state += f"\n{key}={value}"
         return state
 
     @staticmethod
