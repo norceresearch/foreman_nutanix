@@ -7,7 +7,7 @@ module ForemanNutanix
       :storage_container_ext_id, :num_sockets, :num_cores_per_socket,
       :disk_size_bytes, :description, :network_id, :storage_container,
       :disk_size_gb, :power_on, :mac_address, :vm_ip_addresses, :create_time,
-      :boot_method, :secure_boot
+      :boot_method, :secure_boot, :gpus
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -46,6 +46,9 @@ module ForemanNutanix
       # Boot config
       @boot_method = args[:boot_method]
       @secure_boot = args[:secure_boot]
+
+      # GPUs
+      @gpus = args[:gpus]
     end
 
     # Required by Foreman - indicates if VM exists
