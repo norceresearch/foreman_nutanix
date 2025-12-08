@@ -5,7 +5,7 @@ import dataclasses
 import enum
 import time
 import logging
-from typing import Self, cast
+from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
 import ntnx_prism_py_client as prism
 
@@ -233,6 +233,11 @@ class VirtualMachineMgmt:
             disk_address=disk_address,
         )
 
+        if request.boot_method == "bios":
+            boot_config = vmm.LegacyBoot()
+        else:
+            boot_config = vmm.UefiBoot(is_secure_boot_enabled=request.secure_boot)
+
         # Create VM specification
         vm_spec = vmm.AhvConfigVm(
             name=request.name,
@@ -243,6 +248,7 @@ class VirtualMachineMgmt:
             memory_size_bytes=request.memory_size_bytes,
             nics=[nic],
             disks=[disk],
+            boot_config=boot_config,
         )
 
         # Create the VM - this returns a task reference, not the VM directly
@@ -570,7 +576,9 @@ class VmProvisionRequest:
             "num_cores_per_socket": 2,
             "memory_size_bytes": 8589934592,  # 8 GB
             "disk_size_bytes": 107374182400,   # 100 GB
-            "power_on": true                   # Auto power-on after creation
+            "power_on": true,                  # Auto power-on after creation
+            "boot_method": "uefi",             # uefi | bios
+            "secure_boot": true,               # secure boot conf - applicable only to UEFI
         }
     """
 
@@ -584,6 +592,8 @@ class VmProvisionRequest:
     disk_size_bytes: int
     description: str = ""
     power_on: bool = True
+    boot_method: Literal["bios", "uefi"] = "uefi"
+    secure_boot: bool = False
 
 
 @dataclasses.dataclass(frozen=True)

@@ -1,7 +1,13 @@
 module ForemanNutanix
   class NutanixCompute
     attr_reader :identity, :name, :hostname, :cluster, :args
-    attr_accessor :zone, :machine_type, :network, :image_id, :associate_external_ip, :cpus, :memory, :power_state, :subnet_ext_id, :storage_container_ext_id, :num_sockets, :num_cores_per_socket, :disk_size_bytes, :description, :network_id, :storage_container, :disk_size_gb, :power_on, :mac_address, :vm_ip_addresses, :create_time
+    attr_accessor :zone, :machine_type,
+      :network, :image_id, :associate_external_ip,
+      :cpus, :memory, :power_state, :subnet_ext_id,
+      :storage_container_ext_id, :num_sockets, :num_cores_per_socket,
+      :disk_size_bytes, :description, :network_id, :storage_container,
+      :disk_size_gb, :power_on, :mac_address, :vm_ip_addresses, :create_time,
+      :boot_method, :secure_boot
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -36,6 +42,10 @@ module ForemanNutanix
       @mac_address = args[:mac_address]
       @vm_ip_addresses = args[:ip_addresses] || []
       @create_time = args[:create_time]
+
+      # Boot config
+      @boot_method = args[:boot_method]
+      @secure_boot = args[:secure_boot]
     end
 
     # Required by Foreman - indicates if VM exists
@@ -77,6 +87,8 @@ module ForemanNutanix
         disk_size_bytes: actual_disk_bytes.to_i,
         description: @description || '',
         power_on: @power_on.nil? || @power_on, # Default to true if not set
+        secure_boot: @secure_boot,
+        boot_method: @boot_method,
       }
 
       Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="

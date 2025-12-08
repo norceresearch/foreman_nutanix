@@ -70,6 +70,13 @@ module ForemanNutanix
       []
     end
 
+    def available_boot_methods
+      [
+        OpenStruct.new({ id: 'uefi', name: 'UEFI' }),
+        OpenStruct.new({ id: 'bios', name: 'BIOS' }),
+      ]
+    end
+
     # Available networks for VMs
     def available_networks
       Rails.logger.info '=== NUTANIX: Fetching available networks from shim server ==='
