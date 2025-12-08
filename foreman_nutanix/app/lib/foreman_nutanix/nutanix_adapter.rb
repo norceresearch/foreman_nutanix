@@ -23,6 +23,10 @@ module ForemanNutanix
         NutanixCompute.new(@cluster, attrs)
       end
 
+      def each(&block)
+        all.each(&block)
+      end
+
       def get(uuid)
         Rails.logger.info "=== NUTANIX: ServersCollection::get called with uuid: #{uuid} ==="
 
@@ -102,4 +106,3 @@ module ForemanNutanix
     end
   end
 end
-
