@@ -5,7 +5,7 @@ import dataclasses
 import enum
 import time
 import logging
-from typing import Literal, LiteralString, Self, cast
+from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
 import ntnx_prism_py_client as prism
 
