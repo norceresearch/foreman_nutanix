@@ -53,6 +53,9 @@ module ForemanNutanix
             mac_address: data['mac_address'],
             ip_addresses: data['ip_addresses'] || [],
             create_time: data['create_time'],
+            boot_method: data['boot_method'],
+            secure_boot: data['secure_boot'],
+            gpus: data['gpus'],
           })
           vm.instance_variable_set(:@persisted, true)
           vm

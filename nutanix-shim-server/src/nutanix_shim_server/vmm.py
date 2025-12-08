@@ -517,6 +517,9 @@ class VmDetailsMetadata:
     mac_address: None | str
     ip_addresses: list[str]
     create_time: None | datetime.datetime
+    boot_method: None | str
+    secure_boot: None | bool
+    gpus: None | list[str]
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -530,6 +533,16 @@ class VmDetailsMetadata:
 
         # Convert power state enum to string
         power_state = str(vm.power_state) if vm.power_state else None
+
+        # Convert boot config to the boot method
+        secure_boot = None
+        if isinstance(vm.boot_config, vmm.UefiBoot):
+            boot_method = "uefi"
+            secure_boot = vm.boot_config.is_secure_boot_enabled
+        elif isinstance(vm.boot_config, vmm.LegacyBoot):
+            boot_method = "bios"
+        else:
+            boot_method = f"{type(vm.boot_config)}"
 
         # Extract MAC address from first NIC
         mac_address = None
@@ -546,6 +559,12 @@ class VmDetailsMetadata:
                     if ip_addr and hasattr(ip_addr, "value"):
                         ip_addresses.append(ip_addr.value)
 
+        # Initial info about GPUs (if any)
+        gpus: list[str] = []
+        gpu: vmm.Gpu
+        for gpu in vm.gpus or []:
+            gpus.append(str(gpu.device_id or "unknown device id"))
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
@@ -557,6 +576,9 @@ class VmDetailsMetadata:
             mac_address=mac_address,
             ip_addresses=ip_addresses,
             create_time=vm.create_time if hasattr(vm, "create_time") else None,
+            boot_method=boot_method,
+            secure_boot=secure_boot,
+            gpus=[g.device_id for g in vm.gpus or []],
         )
 
 

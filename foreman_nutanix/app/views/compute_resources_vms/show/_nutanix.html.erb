@@ -39,6 +39,18 @@
       <td><%= _("IP Addresses") %></td>
       <td><%= @vm.ip_addresses.join(", ") if @vm.ip_addresses.any? %></td>
     </tr>
+    <tr>
+      <td><%= _("Boot Method") %></td>
+      <td><%= @vm.boot_method %></td>
+    </tr>
+    <tr>
+      <td><%= _("Secure Boot Enabled (UEFI only)") %></td>
+      <td><%= @vm.secure_boot %></td>
+    </tr>
+    <tr>
+      <td><%= _("GPUs") %></td>
+      <td><%= @vm.gpus %></td>
+    </tr>
   </tbody>
 </table>
 
