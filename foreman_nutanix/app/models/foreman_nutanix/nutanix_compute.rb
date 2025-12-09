@@ -323,7 +323,7 @@ module ForemanNutanix
     # Required by Foreman - pretty machine type
     def pretty_machine_type
       Rails.logger.info '=== NUTANIX: NutanixCompute::pretty_machine_type called ==='
-      "#{@cpus} CPUs, #{memory}GB RAM"
+      "#{@cpus} CPUs \t|\t #{memory}GB RAM \t|\t #{disk_size_gb}GB Disk"
     end
 
     # Required by Foreman - volumes/disks
