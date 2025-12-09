@@ -1,7 +1,11 @@
 <thead>
   <tr>
     <th><%= _("Name") %></th>
-    <th><%= _("Type") %></th>
+    <th><%= _("Description") %></th>
+    <th><%= _("CPUs") %></th>
+    <th><%= _("Memory (GB)") %></th>
+    <th><%= _("Disk Size (GB)") %></th>
+    <th><%= _("GPUs") %></th>
     <th><%= _("State") %></th>
     <th><%= _("Actions") %></th>
   </tr>
@@ -26,7 +30,17 @@
       ) %>
     <tr>
       <td><%= link_to_if_authorized vm.name, view_path %></td>
-      <td><%= vm.pretty_machine_type %></td>
+      <td><%= vm.description %></td>
+      <td><%= vm.cpus %></td>
+      <td><%= vm.memory %></td>
+      <td><%= vm.disk_size_gb %></td>
+      <td>
+        <% if vm.gpus.empty? %>
+          <input type="checkbox" disabled/>&nbsp;
+        <% else %>
+          <input type="checkbox" disabled checked/>&nbsp;
+        <% end %>
+      </td>
       <td><%= vm.status.downcase %></td>
       <td>
         <%= action_buttons(
