@@ -1,6 +1,11 @@
 <%= compute_specific_js(compute_resource, "host_edit") %>
 <%= javascript "hosts", "host_edit", "host_edit_interfaces" %>
 
+<%= text_f f,
+:description,
+label: _("Description"),
+help_inline: _("Description for VM in Nutanix") %>
+
 <%= select_f f,
 :image_id,
 compute_resource.available_images,

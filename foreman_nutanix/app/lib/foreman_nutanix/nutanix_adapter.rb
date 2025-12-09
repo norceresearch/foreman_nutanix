@@ -47,6 +47,7 @@ module ForemanNutanix
           vm = NutanixCompute.new(@cluster, {
             identity: data['ext_id'],
             name: data['name'],
+            description: data['description'],
             cpus: total_cpus,
             memory: memory_gb,
             power_state: data['power_state'],
@@ -92,6 +93,7 @@ module ForemanNutanix
           vm = NutanixCompute.new(@cluster, {
             identity: vm_data['ext_id'],
             name: vm_data['name'],
+            description: vm_data['description'],
             cpus: total_cpus,
             memory: memory_gb,
             power_state: vm_data['power_state'],
