@@ -75,11 +75,25 @@ compute_resource.available_boot_methods,
 :id,
 :name,
 { include_blank: _("Select boot method") },
-{ label: _("Boot method"), help_inline: _("Select boot method") } %>
-
-<%= checkbox_f f,
-:secure_boot,
 {
-  label: _("Secure Boot (not applicable to BIOS boot method)"),
-  help_inline: _("Enable secure boot"),
+  label: _("Boot method"),
+  help_inline: _("Select boot method"),
+  id: "boot-method-select",
 } %>
+
+<div id="uefi-options" class="hidden">
+  <%= checkbox_f f,
+  :secure_boot,
+  { label: _("Secure Boot"), help_inline: _("Enable secure boot") } %>
+</div>
+
+<script>
+  var $bootMethod = $('#boot-method-select');
+
+  function toggleUefiOptions() {
+    $('#uefi-options').toggleClass('hidden', $bootMethod.val() !== 'uefi');
+  }
+
+  toggleUefiOptions();
+  $bootMethod.on('change', toggleUefiOptions);
+</script>
