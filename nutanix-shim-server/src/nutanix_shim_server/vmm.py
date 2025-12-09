@@ -509,6 +509,7 @@ class VmDetailsMetadata:
 
     ext_id: str
     name: str
+    description: None | str
     cluster_ext_id: None | str
     power_state: None | str
     num_sockets: None | int
@@ -568,6 +569,7 @@ class VmDetailsMetadata:
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
+            description=cast(str, vm.description),
             cluster_ext_id=cluster_ext_id,
             power_state=power_state,
             num_sockets=vm.num_sockets,

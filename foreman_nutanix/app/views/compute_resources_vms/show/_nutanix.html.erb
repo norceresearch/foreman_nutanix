@@ -7,6 +7,10 @@
       <td><%= @vm.name %></td>
     </tr>
     <tr>
+      <td><%= _("Description") %></td>
+      <td><%= @vm.description %></td>
+    </tr>
+    <tr>
       <td><%= _("Created") %></td>
       <td><%= if @vm.creation_timestamp
           date_time_relative(@vm.creation_timestamp)
