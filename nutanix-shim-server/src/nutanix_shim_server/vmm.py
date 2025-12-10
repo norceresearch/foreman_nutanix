@@ -9,10 +9,19 @@ from typing import Literal, Self, cast
 
 import ntnx_prism_py_client as prism
 import ntnx_vmm_py_client as vmm
+from ntnx_vmm_py_client.models.common.v1.response.ApiResponseMetadata import (
+    ApiResponseMetadata,
+)
+from ntnx_vmm_py_client.models.OneOfvmm.v4.esxi.config.ListVmsApiResponsedata import (
+    ListVmsApiResponsedata,
+)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
     ADSFVolumeGroupReference,
 )
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ListVmsApiResponse import (
+    ListVmsApiResponse,
+)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
     NicNetworkInfo,
@@ -103,12 +112,25 @@ class VirtualMachineMgmt:
 
     def list_vms(self) -> list["VmListMetadata"]:
         """List all VMs in the Nutanix environment"""
-        # TODO: paginate
-        resp: vmm.ListVmsApiResponse = self.vms_api.list_vms(_limit=100)  # type: ignore
-        vms: None | list[vmm.AhvConfigVm] = resp.data  # type: ignore
-        if vms:
-            return [VmListMetadata.from_nutanix_vm(vm) for vm in vms]
-        return []
+
+        vms = []
+        page = 1
+        while True:
+            resp: ListVmsApiResponse = self.vms_api.list_vms(_page=page, _limit=100)  # type: ignore
+            respmeta = cast(ApiResponseMetadata, resp.metadata)
+
+            data: None | list[vmm.AhvConfigVm] = resp.data  # type: ignore
+            if data:
+                vms.extend([VmListMetadata.from_nutanix_vm(vm) for vm in data])
+            else:
+                break
+
+            links = {link.rel: link.href for link in respmeta.links or []}
+            if links.get("self") == links.get("last") or not links:
+                break
+
+            page += 1
+        return vms
 
     def get_vm_details(self, vm_ext_id: str) -> "VmDetailsMetadata":
         """
