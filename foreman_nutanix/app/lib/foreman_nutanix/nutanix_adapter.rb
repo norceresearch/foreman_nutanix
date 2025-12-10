@@ -1,5 +1,7 @@
 module ForemanNutanix
   class NutanixAdapter
+    include Enumerable
+
     def initialize(cluster)
       Rails.logger.info "=== NUTANIX: NutanixAdapter::initialize cluster=#{cluster} ==="
       @cluster = cluster
