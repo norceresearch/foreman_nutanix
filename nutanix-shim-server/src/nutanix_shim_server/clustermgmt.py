@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime
 from typing import Self, cast
+
 import ntnx_clustermgmt_py_client as cm
 
 from nutanix_shim_server import server
-
-try:
-    from IPython.terminal.embed import embed
-except ImportError:
-
-    def embed():
-        pass
 
 
 class ClusterMgmt:
@@ -81,7 +76,6 @@ class ClusterMgmt:
         Gets CPU/memory capacity by aggregating from cluster hosts, and usage
         stats from the cluster stats API.
         """
-        import datetime
 
         # Get cluster stats for usage metrics
         end_time = datetime.datetime.now(datetime.timezone.utc)
@@ -221,9 +215,12 @@ class ClusterResourceStats:
         memory_capacity_bytes: int = 0,
         cpu_cores_total: int = 0,
     ) -> Self:
-        """Convert Nutanix SDK ClusterStats to our response model
+        """
+        Convert Nutanix SDK ClusterStats to our response model
 
-        Note: Stats from Nutanix API can be time-series (lists) or scalar values.
+        Notes
+        -----
+        Stats from Nutanix API can be time-series (lists) or scalar values.
         We extract the latest/last value from lists if needed.
 
         CPU and memory capacity, and CPU cores are passed in separately since

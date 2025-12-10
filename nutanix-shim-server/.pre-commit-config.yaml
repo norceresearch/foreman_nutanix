@@ -1,12 +1,11 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.14.7
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: lint
-        args: [ --fix ]
+        args: [--fix, --select, I]
+        files: ^nutanix-shim-server/
       - id: ruff-format
         name: format
-      - id: ruff
-        name: sort imports
-        args: [ --select, I, --fix]
+        files: ^nutanix-shim-server/

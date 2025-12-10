@@ -1,17 +1,18 @@
 from __future__ import annotations
+
 import ast
+import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-import os
 
 from fastapi import FastAPI
 
 from nutanix_shim_server.clustermgmt import ClusterMgmt
-from nutanix_shim_server.routes.clustermgmt import router as clustermgmt_router
-from nutanix_shim_server.vmm import VirtualMachineMgmt
-from nutanix_shim_server.routes.vmm import router as vmm_router
 from nutanix_shim_server.networking import Networking
+from nutanix_shim_server.routes.clustermgmt import router as clustermgmt_router
 from nutanix_shim_server.routes.networking import router as networking_router
+from nutanix_shim_server.routes.vmm import router as vmm_router
+from nutanix_shim_server.vmm import VirtualMachineMgmt
 
 
 @dataclass(frozen=True)
