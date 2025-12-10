@@ -7,7 +7,26 @@ import time
 import logging
 from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVmStorageConfig import (
+    ADSFVmStorageConfig,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
+    NicNetworkInfo,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.SubnetReference import (
+    SubnetReference,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
+    VmDisk,
+    VmDiskContainerReference,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
+    ADSFVolumeGroupReference,
+)
 import ntnx_prism_py_client as prism
+
 
 from nutanix_shim_server import server
 
@@ -448,6 +467,7 @@ class VmListMetadata:
 
     ext_id: str
     name: str
+    description: None | str
     cluster_ext_id: None | str
     power_state: None | str
     num_sockets: None | int
@@ -456,6 +476,7 @@ class VmListMetadata:
     mac_address: None | str
     ip_addresses: list[str]
     create_time: None | datetime.datetime
+    disk_size_bytes: None | int
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -485,9 +506,15 @@ class VmListMetadata:
                     if ip_addr and hasattr(ip_addr, "value"):
                         ip_addresses.append(ip_addr.value)
 
+        disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
+        disk_size_bytes = disk_sizes[0] if disk_sizes else None
+
+        description = cast(str, vm.description)
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
+            description=description,
             cluster_ext_id=cluster_ext_id,
             power_state=power_state,
             num_sockets=vm.num_sockets,
@@ -496,6 +523,7 @@ class VmListMetadata:
             mac_address=mac_address,
             ip_addresses=ip_addresses,
             create_time=vm.create_time if hasattr(vm, "create_time") else None,
+            disk_size_bytes=disk_size_bytes,
         )
 
 
@@ -512,6 +540,7 @@ class VmDetailsMetadata:
     description: None | str
     cluster_ext_id: None | str
     power_state: None | str
+    network_id: None | str
     num_sockets: None | int
     num_cores_per_socket: None | int
     memory_size_bytes: None | int
@@ -521,6 +550,8 @@ class VmDetailsMetadata:
     boot_method: None | str
     secure_boot: None | bool
     gpus: None | list[str]
+    disk_size_bytes: None | int
+    container_id: None | str
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -566,12 +597,38 @@ class VmDetailsMetadata:
         for gpu in vm.gpus or []:
             gpus.append(str(gpu.device_id or "unknown device id"))
 
+        # Get boot disk size
+        # TODO: Can potentially be more than one disk - right now we assume one
+        #       since ability to add more is not implemented.
+        disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
+        disk_size_bytes = disk_sizes[0] if disk_sizes else None
+
+        # Network
+        network_id = None
+        nic: Nic
+        for nic in vm.nics or []:
+            network_id = nic.ext_id
+            network_info: NicNetworkInfo | None = nic.network_info
+            if isinstance(network_info, NicNetworkInfo):
+                subnet: SubnetReference | None = network_info.subnet
+                if isinstance(subnet, SubnetReference):
+                    network_id = subnet.ext_id
+                    break
+
+        # Storage container
+        container_id = None
+        if vm.disks:
+            disk: Disk = vm.disks[0]
+            if ref := _disk_container_ref_from_disk(disk):
+                container_id = ref.ext_id
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
             description=cast(str, vm.description),
             cluster_ext_id=cluster_ext_id,
             power_state=power_state,
+            network_id=network_id,
             num_sockets=vm.num_sockets,
             num_cores_per_socket=vm.num_cores_per_socket,
             memory_size_bytes=vm.memory_size_bytes,
@@ -581,7 +638,27 @@ class VmDetailsMetadata:
             boot_method=boot_method,
             secure_boot=secure_boot,
             gpus=[g.device_id for g in vm.gpus or []],
+            disk_size_bytes=disk_size_bytes,
+            container_id=container_id,
         )
+
+
+def _disk_container_ref_from_disk(disk: Disk) -> VmDiskContainerReference | None:
+    info: None | VmDisk | ADSFVolumeGroupReference = disk.backing_info
+    if isinstance(info, VmDisk):
+        return cast(VmDiskContainerReference, info.storage_container)
+
+
+def _disk_sizes_bytes_from_disks(disks: list[Disk]) -> list[int | None]:
+    disk: Disk
+    sizes = []
+    for disk in disks:
+        info: None | VmDisk | ADSFVolumeGroupReference = disk.backing_info
+        if isinstance(info, VmDisk):
+            sizes.append(info.disk_size_bytes)
+        else:
+            sizes.append(None)
+    return sizes
 
 
 @dataclasses.dataclass
