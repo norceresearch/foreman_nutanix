@@ -425,7 +425,8 @@ module ForemanNutanix
     # Associate host with VM
     def associated_host(vm)
       Rails.logger.info "=== NUTANIX: ASSOCIATED_HOST CALLED for vm: #{vm.name} ==="
-      associate_by('ip', [vm.vm_ip_address, vm.private_ip_address])
+      macs = vm.interfaces.map(&:mac)
+      associate_by('mac', macs)
     end
 
     # User data support
