@@ -60,6 +60,7 @@ module ForemanNutanix
             secure_boot: data['secure_boot'],
             gpus: data['gpus'],
             disk_size_gb: data['disk_size_bytes'].to_i / (1024**3),
+            network_id: data['network_id'],
           })
           vm.instance_variable_set(:@persisted, true)
           vm

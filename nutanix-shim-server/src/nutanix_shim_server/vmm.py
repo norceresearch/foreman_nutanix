@@ -7,6 +7,13 @@ import time
 import logging
 from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
+    NicNetworkInfo,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.SubnetReference import (
+    SubnetReference,
+)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
     VmDisk,
@@ -525,6 +532,7 @@ class VmDetailsMetadata:
     description: None | str
     cluster_ext_id: None | str
     power_state: None | str
+    network_id: None | str
     num_sockets: None | int
     num_cores_per_socket: None | int
     memory_size_bytes: None | int
@@ -586,12 +594,24 @@ class VmDetailsMetadata:
         disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
         disk_size_bytes = disk_sizes[0] if disk_sizes else None
 
+        network_id = None
+        nic: Nic
+        for nic in vm.nics or []:
+            network_id = nic.ext_id
+            network_info: NicNetworkInfo | None = nic.network_info
+            if isinstance(network_info, NicNetworkInfo):
+                subnet: SubnetReference | None = network_info.subnet
+                if isinstance(subnet, SubnetReference):
+                    network_id = subnet.ext_id
+                    break
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
             description=cast(str, vm.description),
             cluster_ext_id=cluster_ext_id,
             power_state=power_state,
+            network_id=network_id,
             num_sockets=vm.num_sockets,
             num_cores_per_socket=vm.num_cores_per_socket,
             memory_size_bytes=vm.memory_size_bytes,

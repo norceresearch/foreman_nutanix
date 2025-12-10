@@ -17,12 +17,17 @@ compute_resource.available_images,
   help_inline: _("Operating system image to use (optional)"),
 } %>
 
+<%# NOTE: If we're on a Host Edit page - show the selected
+#      network by not having a 'include_blank'. Once
+#      editing is implemented, this might be able to go away. %>
+<% include_blank =
+  f.object.class == "ForemanNutanix::NutanixCompute" ? nil : _("Select Network") %>
 <%= select_f f,
 :network_id,
 compute_resource.available_networks,
 :id,
 :name,
-{ include_blank: _("Select Network") },
+{ include_blank: include_blank, selected: f.object.try(:network_id) },
 { label: _("Network"), help_inline: _("Network/subnet for the VM") } %>
 
 <%= select_f f,
