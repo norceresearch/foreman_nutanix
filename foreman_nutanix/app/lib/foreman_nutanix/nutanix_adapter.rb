@@ -59,6 +59,7 @@ module ForemanNutanix
             boot_method: data['boot_method'],
             secure_boot: data['secure_boot'],
             gpus: data['gpus'],
+            disk_size_gb: data['disk_size_bytes'].to_i / (1024**3),
           })
           vm.instance_variable_set(:@persisted, true)
           vm
@@ -102,6 +103,7 @@ module ForemanNutanix
             mac_address: vm_data['mac_address'],
             ip_addresses: vm_data['ip_addresses'] || [],
             create_time: vm_data['create_time'],
+            disk_size_gb: vm_data['disk_size_bytes'].to_i / (1024**3),
           })
           vm.instance_variable_set(:@persisted, true)
           vm

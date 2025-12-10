@@ -7,7 +7,15 @@ import time
 import logging
 from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
+    VmDisk,
+)
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
+    ADSFVolumeGroupReference,
+)
 import ntnx_prism_py_client as prism
+
 
 from nutanix_shim_server import server
 
@@ -456,6 +464,7 @@ class VmListMetadata:
     mac_address: None | str
     ip_addresses: list[str]
     create_time: None | datetime.datetime
+    disk_size_bytes: None | int
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -485,6 +494,9 @@ class VmListMetadata:
                     if ip_addr and hasattr(ip_addr, "value"):
                         ip_addresses.append(ip_addr.value)
 
+        disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
+        disk_size_bytes = disk_sizes[0] if disk_sizes else None
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
@@ -496,6 +508,7 @@ class VmListMetadata:
             mac_address=mac_address,
             ip_addresses=ip_addresses,
             create_time=vm.create_time if hasattr(vm, "create_time") else None,
+            disk_size_bytes=disk_size_bytes,
         )
 
 
@@ -521,6 +534,7 @@ class VmDetailsMetadata:
     boot_method: None | str
     secure_boot: None | bool
     gpus: None | list[str]
+    disk_size_bytes: None | int
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -566,6 +580,12 @@ class VmDetailsMetadata:
         for gpu in vm.gpus or []:
             gpus.append(str(gpu.device_id or "unknown device id"))
 
+        # Get boot disk size
+        # TODO: Can potentially be more than one disk - right now we assume one
+        #       since ability to add more is not implemented.
+        disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
+        disk_size_bytes = disk_sizes[0] if disk_sizes else None
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
@@ -581,7 +601,20 @@ class VmDetailsMetadata:
             boot_method=boot_method,
             secure_boot=secure_boot,
             gpus=[g.device_id for g in vm.gpus or []],
+            disk_size_bytes=disk_size_bytes,
         )
+
+
+def _disk_sizes_bytes_from_disks(disks: list[Disk]) -> list[int | None]:
+    disk: Disk
+    sizes = []
+    for disk in disks:
+        info: None | VmDisk | ADSFVolumeGroupReference = disk.backing_info
+        if isinstance(info, VmDisk):
+            sizes.append(info.disk_size_bytes)
+        else:
+            sizes.append(None)
+    return sizes
 
 
 @dataclasses.dataclass
