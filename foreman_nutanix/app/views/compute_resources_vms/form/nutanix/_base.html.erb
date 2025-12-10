@@ -33,20 +33,15 @@ compute_resource.available_networks,
 <%# NOTE: If we're on a Host Edit page - show the selected
 #      storage container by not having a 'include_blank'. Once
 #      editing is implemented, this might be able to go away. %>
-<% include_blank =
-  (
-    if f.object.class == "ForemanNutanix::NutanixCompute"
-      nil
-    else
-      _("Select Container")
-    end
-  ) %>
 <%= select_f f,
 :storage_container,
 compute_resource.available_storage_containers,
 :id,
 :name,
-{ include_blank: include_blank, selected: f.object.try(:storage_container) },
+{
+  include_blank: _("Select Container"),
+  selected: f.object.try(:storage_container),
+},
 {
   label: _("Storage Container"),
   help_inline: _("Storage container for VM disks"),
