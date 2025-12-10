@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Request, HTTPException
 import logging
 from functools import wraps
 
+from fastapi import APIRouter, HTTPException, Request
+
 from nutanix_shim_server.vmm import (
-    VirtualMachineMgmt,
     ImageMetadata,
-    VmListMetadata,
-    VmDetailsMetadata,
-    VmProvisionRequest,
-    VmMetadata,
     PowerStateChangeRequest,
+    VirtualMachineMgmt,
+    VmDetailsMetadata,
+    VmListMetadata,
+    VmMetadata,
     VmPowerStateResponse,
+    VmProvisionRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,18 +25,20 @@ def handle_vm_not_found(func):
 
     Catches ApiException with status 404 and converts it to a clean HTTPException.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            # Check if it's a 404 Not Found error from Nutanix API
-            if hasattr(e, 'status') and e.status == 404:
-                vm_id = kwargs.get('vm_id', 'unknown')
+            if hasattr(e, "status") and e.status == 404:
+                vm_id = kwargs.get("vm_id", "unknown")
                 logger.warning(f"VM not found: {vm_id}")
-                raise HTTPException(status_code=404, detail=f"VM with ID '{vm_id}' not found")
-            # Re-raise other exceptions
+                raise HTTPException(
+                    status_code=404, detail=f"VM with ID '{vm_id}' not found"
+                )
             raise
+
     return wrapper
 
 

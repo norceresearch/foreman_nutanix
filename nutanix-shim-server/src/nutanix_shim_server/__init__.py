@@ -1,7 +1,8 @@
-import sys
 import subprocess
+import sys
 
 from fastapi_cli.cli import main as fastapi_main
+
 from nutanix_shim_server import server
 
 

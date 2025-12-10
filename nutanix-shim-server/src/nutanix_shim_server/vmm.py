@@ -1,43 +1,33 @@
 from __future__ import annotations
 
-import datetime
 import dataclasses
+import datetime
 import enum
-import time
 import logging
+import time
 from typing import Literal, Self, cast
+
+import ntnx_prism_py_client as prism
 import ntnx_vmm_py_client as vmm
-from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
-from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVmStorageConfig import (
-    ADSFVmStorageConfig,
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
+    ADSFVolumeGroupReference,
 )
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
     NicNetworkInfo,
 )
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.SubnetReference import (
     SubnetReference,
 )
-from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
     VmDisk,
     VmDiskContainerReference,
 )
-from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
-    ADSFVolumeGroupReference,
-)
-import ntnx_prism_py_client as prism
-
 
 from nutanix_shim_server import server
 
 logger = logging.getLogger(__name__)
-
-try:
-    from IPython.terminal.embed import embed
-except ImportError:
-
-    def embed():
-        pass
 
 
 class VirtualMachineMgmt:
@@ -124,10 +114,12 @@ class VirtualMachineMgmt:
         """
         Get detailed information about a VM including MAC address and IP addresses.
 
-        Args:
+        Parameters
+        ----------
             vm_ext_id: The external ID of the VM
 
-        Returns:
+        Returns
+        -------
             VmDetailsMetadata with full VM details
         """
         resp: vmm.AhvConfigGetVmApiResponse = self.vms_api.get_vm_by_id(extId=vm_ext_id)  # type: ignore
@@ -138,10 +130,12 @@ class VirtualMachineMgmt:
         """
         Get the current power state of a VM.
 
-        Args:
+        Parameters
+        ----------
             vm_ext_id: The external ID of the VM
 
-        Returns:
+        Returns
+        -------
             VmPowerStateResponse with the current power state
         """
         resp: vmm.AhvConfigGetVmApiResponse = self.vms_api.get_vm_by_id(extId=vm_ext_id)  # type: ignore
@@ -159,12 +153,15 @@ class VirtualMachineMgmt:
         """
         Change the power state of a VM.
 
-        Args:
+        Parameters
+        ----------
             vm_ext_id: The external ID of the VM
             action: The power action to perform
 
-        Returns:
-            VmPowerStateResponse with the new power state
+        Returns
+        -------
+        VmPowerStateResponse
+            with the new power state
         """
         # Fetch VM to get ETag (required for all power state operations)
         get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
@@ -184,17 +181,18 @@ class VirtualMachineMgmt:
         else:
             raise ValueError(f"Unknown power action: {action}")
 
-        # Get updated power state
         return self.get_vm_power_state(vm_ext_id)
 
     def delete_vm(self, vm_ext_id: str) -> None:
         """
         Delete a virtual machine.
 
-        Args:
+        Parameters
+        ----------
             vm_ext_id: The external ID of the VM to delete
 
-        Raises:
+        Raises
+        ------
             ApiException: If the VM cannot be deleted
         """
         # First fetch the VM to get its ETag (required for deletion)
@@ -208,13 +206,17 @@ class VirtualMachineMgmt:
         """
         Provision a new VM with network (not image-based), CPU, memory, and disk configuration.
 
-        Args:
+        Parameters
+        ----------
             request: VM provisioning request with all required specifications
 
-        Returns:
-            VmMetadata with information about the created VM
+        Returns
+        -------
+        VmMetadata
+            with information about the created VM
         """
-        # Create cluster reference
+        # TODO: This method is wildly too large
+
         cluster_ref = vmm.AhvConfigClusterReference(ext_id=request.cluster_ext_id)
 
         # Create network configuration with subnet reference and DHCP
@@ -404,7 +406,7 @@ class VirtualMachineMgmt:
 
                                 raise RuntimeError(error_msg)
                         else:
-                            logger.info(f"Power-on not requested, VM will remain off")
+                            logger.info("Power-on not requested, VM will remain off")
 
                         return VmMetadata(
                             ext_id=vm_ext_id,
@@ -488,7 +490,6 @@ class VmListMetadata:
                 vm.cluster.ext_id if hasattr(vm.cluster, "ext_id") else None
             )
 
-        # Convert power state enum to string
         power_state = str(vm.power_state) if vm.power_state else None
 
         # Extract MAC address from first NIC
@@ -498,6 +499,7 @@ class VmListMetadata:
             first_nic = vm.nics[0]
             if hasattr(first_nic, "backing_info") and first_nic.backing_info:
                 mac_address = getattr(first_nic.backing_info, "mac_address", None)
+
             # Extract IP addresses from NIC network info
             if hasattr(first_nic, "network_info") and first_nic.network_info:
                 ipv4_config = getattr(first_nic.network_info, "ipv4_config", None)

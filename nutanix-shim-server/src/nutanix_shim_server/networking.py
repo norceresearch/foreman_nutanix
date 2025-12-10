@@ -1,21 +1,14 @@
 from __future__ import annotations
 
-import os
 import dataclasses
 import logging
 from typing import Self, cast
+
 import ntnx_networking_py_client as net
 
 from nutanix_shim_server import server
 
 logger = logging.getLogger(__name__)
-
-try:
-    from IPython.terminal.embed import embed
-except ImportError:
-
-    def embed():
-        pass
 
 
 class Networking:

@@ -638,7 +638,7 @@ wheels = [
 
 [[package]]
 name = "nutanix-shim-server"
-version = "0.0.6"
+version = "0.0.7"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
