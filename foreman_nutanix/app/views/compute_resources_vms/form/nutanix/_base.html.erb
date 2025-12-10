@@ -30,9 +30,6 @@ compute_resource.available_networks,
 { include_blank: include_blank, selected: f.object.try(:network_id) },
 { label: _("Network"), help_inline: _("Network/subnet for the VM") } %>
 
-<%# NOTE: If we're on a Host Edit page - show the selected
-#      storage container by not having a 'include_blank'. Once
-#      editing is implemented, this might be able to go away. %>
 <%= select_f f,
 :storage_container,
 compute_resource.available_storage_containers,
