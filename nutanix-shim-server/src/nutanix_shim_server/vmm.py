@@ -8,6 +8,9 @@ import logging
 from typing import Literal, Self, cast
 import ntnx_vmm_py_client as vmm
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
+from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVmStorageConfig import (
+    ADSFVmStorageConfig,
+)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
     NicNetworkInfo,
 )
@@ -17,6 +20,7 @@ from ntnx_vmm_py_client.models.vmm.v4.ahv.config.SubnetReference import (
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
     VmDisk,
+    VmDiskContainerReference,
 )
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
     ADSFVolumeGroupReference,
@@ -543,6 +547,7 @@ class VmDetailsMetadata:
     secure_boot: None | bool
     gpus: None | list[str]
     disk_size_bytes: None | int
+    container_id: None | str
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -594,6 +599,7 @@ class VmDetailsMetadata:
         disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
         disk_size_bytes = disk_sizes[0] if disk_sizes else None
 
+        # Network
         network_id = None
         nic: Nic
         for nic in vm.nics or []:
@@ -604,6 +610,13 @@ class VmDetailsMetadata:
                 if isinstance(subnet, SubnetReference):
                     network_id = subnet.ext_id
                     break
+
+        # Storage container
+        container_id = None
+        if vm.disks:
+            disk: Disk = vm.disks[0]
+            if ref := _disk_container_ref_from_disk(disk):
+                container_id = ref.ext_id
 
         return cls(
             ext_id=cast(str, vm.ext_id),
@@ -622,7 +635,14 @@ class VmDetailsMetadata:
             secure_boot=secure_boot,
             gpus=[g.device_id for g in vm.gpus or []],
             disk_size_bytes=disk_size_bytes,
+            container_id=container_id,
         )
+
+
+def _disk_container_ref_from_disk(disk: Disk) -> VmDiskContainerReference | None:
+    info: None | VmDisk | ADSFVolumeGroupReference = disk.backing_info
+    if isinstance(info, VmDisk):
+        return cast(VmDiskContainerReference, info.storage_container)
 
 
 def _disk_sizes_bytes_from_disks(disks: list[Disk]) -> list[int | None]:
