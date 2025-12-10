@@ -467,6 +467,7 @@ class VmListMetadata:
 
     ext_id: str
     name: str
+    description: None | str
     cluster_ext_id: None | str
     power_state: None | str
     num_sockets: None | int
@@ -508,9 +509,12 @@ class VmListMetadata:
         disk_sizes = _disk_sizes_bytes_from_disks(vm.disks or [])
         disk_size_bytes = disk_sizes[0] if disk_sizes else None
 
+        description = cast(str, vm.description)
+
         return cls(
             ext_id=cast(str, vm.ext_id),
             name=cast(str, vm.name),
+            description=description,
             cluster_ext_id=cluster_ext_id,
             power_state=power_state,
             num_sockets=vm.num_sockets,
