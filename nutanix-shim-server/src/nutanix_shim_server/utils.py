@@ -1,7 +1,6 @@
-from typing import Concatenate, TypeVar, Callable
+from typing import Callable, Concatenate, TypeVar
 
 from ntnx_vmm_py_client import ApiResponseMetadata
-
 
 ResponseType = TypeVar("ResponseType")
 Page = TypeVar("Page", bound="int")
