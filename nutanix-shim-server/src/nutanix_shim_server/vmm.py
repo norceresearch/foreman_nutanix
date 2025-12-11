@@ -64,8 +64,10 @@ class VirtualMachineMgmt:
         self.prism_config.backoff_factor = 3
         self.prism_config.verify_ssl = ctx.nutanix_host_verify_ssl
         self.prism_config.port = ctx.nutanix_host_port
-        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
-        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
+        self.prism_config.client_certificate_file = ctx.nutanix_client_certificate_file
+        self.prism_config.root_ca_certificate_file = (
+            ctx.nutanix_root_ca_certificate_file
+        )
 
     @property
     def client(self) -> vmm.ApiClient:
