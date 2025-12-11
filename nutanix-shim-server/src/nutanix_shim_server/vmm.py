@@ -5,7 +5,7 @@ import datetime
 import enum
 import logging
 import time
-from typing import Literal, Self, cast
+from typing import Callable, Literal, Self, cast
 
 import ntnx_prism_py_client as prism
 import ntnx_vmm_py_client as vmm
@@ -35,6 +35,7 @@ from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
 )
 
 from nutanix_shim_server import server
+from nutanix_shim_server.utils import paginate
 
 logger = logging.getLogger(__name__)
 
@@ -103,33 +104,13 @@ class VirtualMachineMgmt:
         return self._vms_api
 
     def list_images(self) -> list[ImageMetadata]:
-        # TODO: paginate
-        resp: vmm.ListImagesApiResponse = self.images_api.list_images(_limit=100)  # type: ignore
-        images: None | list[vmm.Image] = resp.data  # type: ignore
-        if images:
-            return [ImageMetadata.from_nutanix_image(img) for img in images]
-        return []
+        images: list[vmm.Image] = paginate(self.images_api.list_images)
+        return [ImageMetadata.from_nutanix_image(img) for img in images]
 
     def list_vms(self) -> list["VmListMetadata"]:
         """List all VMs in the Nutanix environment"""
-
-        vms = []
-        page = 1
-        while True:
-            resp: ListVmsApiResponse = self.vms_api.list_vms(_page=page, _limit=100)  # type: ignore
-            respmeta = cast(ApiResponseMetadata, resp.metadata)
-
-            data: None | list[vmm.AhvConfigVm] = resp.data  # type: ignore
-            if data:
-                vms.extend([VmListMetadata.from_nutanix_vm(vm) for vm in data])
-            else:
-                break
-
-            links = {link.rel: link.href for link in respmeta.links or []}
-            if links.get("self") == links.get("last") or not links:
-                break
-
-            page += 1
+        data: list[vmm.AhvConfigVm] = paginate(self.vms_api.list_vms)
+        vms = [VmListMetadata.from_nutanix_vm(vm) for vm in data]
         return vms
 
     def get_vm_details(self, vm_ext_id: str) -> "VmDetailsMetadata":

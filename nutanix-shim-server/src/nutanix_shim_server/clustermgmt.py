@@ -7,6 +7,7 @@ from typing import Self, cast
 import ntnx_clustermgmt_py_client as cm
 
 from nutanix_shim_server import server
+from nutanix_shim_server.utils import paginate
 
 
 class ClusterMgmt:
@@ -43,16 +44,13 @@ class ClusterMgmt:
 
     def list_storage_containers(self) -> list[StorageContainerMetadata]:
         """Return list of storage containers"""
-        resp: cm.ListStorageContainersApiResponse = (
-            self.storage_containers_api.list_storage_containers()
-        )  # type: ignore
-        containers: None | list[cm.StorageContainer] = resp.data
-        if containers:
-            return [
-                StorageContainerMetadata.from_nutanix_storage_container(container)
-                for container in containers
-            ]
-        return []
+        containers: list[cm.StorageContainer] = paginate(
+            self.storage_containers_api.list_storage_containers
+        )
+        return [
+            StorageContainerMetadata.from_nutanix_storage_container(container)
+            for container in containers
+        ]
 
     @property
     def clusters_api(self) -> cm.ClustersApi:
@@ -62,13 +60,8 @@ class ClusterMgmt:
 
     def list_clusters(self) -> list[ClusterMetadata]:
         """Return list of clusters"""
-        resp: cm.ListClustersApiResponse = self.clusters_api.list_clusters()
-        clusters: None | list[cm.Cluster] = resp.data
-        if clusters:
-            return [
-                ClusterMetadata.from_nutanix_cluster(cluster) for cluster in clusters
-            ]
-        return []
+        clusters: list[cm.Cluster] = paginate(self.clusters_api.list_clusters)
+        return [ClusterMetadata.from_nutanix_cluster(cluster) for cluster in clusters]
 
     def get_cluster_stats(self, cluster_ext_id: str) -> ClusterResourceStats:
         """Get resource usage statistics for a specific cluster
@@ -89,10 +82,9 @@ class ClusterMgmt:
         stats: cm.ClusterStats = stats_resp.data  # type: ignore
 
         # Get hosts to aggregate CPU and memory capacity
-        hosts_resp = self.clusters_api.list_hosts_by_cluster_id(
-            clusterExtId=cluster_ext_id
+        hosts: list[cm.Host] = paginate(
+            self.clusters_api.list_hosts_by_cluster_id, clusterExtId=cluster_ext_id
         )
-        hosts: None | list[cm.Host] = hosts_resp.data  # type: ignore
 
         # Aggregate capacity from all hosts in the cluster
         total_cpu_capacity_hz = 0
