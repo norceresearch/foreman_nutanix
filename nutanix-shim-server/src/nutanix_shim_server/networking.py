@@ -7,6 +7,7 @@ from typing import Self, cast
 import ntnx_networking_py_client as net
 
 from nutanix_shim_server import server
+from nutanix_shim_server.utils import paginate
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +44,8 @@ class Networking:
 
     def list_subnets(self) -> list[SubnetMetadata]:
         """Return list of available subnets/networks"""
-        # TODO: paginate
-        resp: net.ListSubnetsApiResponse = self.subnets_api.list_subnets(_limit=100)  # type: ignore
-        subnets: None | list[net.Subnet] = resp.data  # type: ignore
-        if subnets:
-            return [SubnetMetadata.from_nutanix_subnet(subnet) for subnet in subnets]
-        return []
+        subnets: list[net.Subnet] = paginate(self.subnets_api.list_subnets)
+        return [SubnetMetadata.from_nutanix_subnet(subnet) for subnet in subnets]
 
 
 @dataclasses.dataclass(frozen=True)
