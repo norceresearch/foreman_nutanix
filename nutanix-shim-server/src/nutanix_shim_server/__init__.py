@@ -1,4 +1,3 @@
-import subprocess
 import sys
 
 from fastapi_cli.cli import main as fastapi_main
@@ -24,17 +23,18 @@ Available environment variables and their current values:
 
     # If user supplied certificates, when we run with uvicorn
     if "--ssl-certfile" in sys.argv and "--ssl-keyfile" in sys.argv:
-        cmd = [
-            "uvicorn",
-            "nutanix_shim_server.server:app",
-            *sys.argv[1:],
-        ]
-        r = -1
+        # Make host default to same as fastapi, both default to port 8000
+        if "--host" not in sys.argv:
+            sys.argv.extend(["--host", "0.0.0.0"])
+
         try:
-            r = subprocess.check_call(cmd)
-        except KeyboardInterrupt:
-            pass
-        sys.exit(r)
+            import uvicorn
+        except ImportError:
+            sys.stderr.write("`uvicorn` not installed")
+            sys.exit(-1)
+        else:
+            sys.argv = ["uvicorn", "nutanix_shim_server.server:app", *sys.argv[1:]]
+            uvicorn.main()
     else:
         sys.argv = [
             "fastapi",
