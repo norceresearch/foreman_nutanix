@@ -5,23 +5,14 @@ import datetime
 import enum
 import logging
 import time
-from typing import Callable, Literal, Self, cast
+from typing import Literal, Self, cast
 
 import ntnx_prism_py_client as prism
 import ntnx_vmm_py_client as vmm
-from ntnx_vmm_py_client.models.common.v1.response.ApiResponseMetadata import (
-    ApiResponseMetadata,
-)
-from ntnx_vmm_py_client.models.OneOfvmm.v4.esxi.config.ListVmsApiResponsedata import (
-    ListVmsApiResponsedata,
-)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ADSFVolumeGroupReference import (
     ADSFVolumeGroupReference,
 )
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Disk import Disk
-from ntnx_vmm_py_client.models.vmm.v4.ahv.config.ListVmsApiResponse import (
-    ListVmsApiResponse,
-)
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.Nic import Nic
 from ntnx_vmm_py_client.models.vmm.v4.ahv.config.NicNetworkInfo import (
     NicNetworkInfo,
@@ -64,8 +55,10 @@ class VirtualMachineMgmt:
         self.prism_config.backoff_factor = 3
         self.prism_config.verify_ssl = ctx.nutanix_host_verify_ssl
         self.prism_config.port = ctx.nutanix_host_port
-        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
-        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
+        self.prism_config.client_certificate_file = ctx.nutanix_client_certificate_file
+        self.prism_config.root_ca_certificate_file = (
+            ctx.nutanix_root_ca_certificate_file
+        )
 
     @property
     def client(self) -> vmm.ApiClient:
