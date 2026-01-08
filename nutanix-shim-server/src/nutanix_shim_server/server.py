@@ -24,6 +24,8 @@ class Context:
     nutanix_host_port: int
     nutanix_client_certificate_file: None | str
     nutanix_root_ca_certificate_file: None | str
+    nutanix_connect_timeout_secs: int
+    nutanix_read_timeout_secs: int
 
     _vars = __annotations__
 
@@ -37,6 +39,8 @@ class Context:
             nutanix_host_port=cls.get_nutanix_host_port(),
             nutanix_client_certificate_file=cls.get_nutanix_client_certificate_file(),
             nutanix_root_ca_certificate_file=cls.get_nutanix_root_ca_certificate_file(),
+            nutanix_connect_timeout_secs=cls.get_nutanix_connect_timeout_secs(),
+            nutanix_read_timeout_secs=cls.get_nutanix_read_timeout_secs(),
         )
 
     @staticmethod
@@ -77,6 +81,16 @@ class Context:
     @staticmethod
     def get_nutanix_root_ca_certificate_file() -> None | str:
         return os.getenv("NUTANIX_ROOT_CA_CERTIFICATE_FILE")
+
+    @staticmethod
+    def get_nutanix_connect_timeout_secs() -> int:
+        # Default 30s - same as SDK default
+        return int(os.environ.get("NUTANIX_CONNECT_TIMEOUT_SECS", 30))
+
+    @staticmethod
+    def get_nutanix_read_timeout_secs() -> int:
+        # Default 30s - same as SDK default
+        return int(os.environ.get("NUTANIX_READ_TIMEOUT_SECS", 30))
 
 
 @asynccontextmanager

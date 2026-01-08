@@ -45,6 +45,8 @@ class VirtualMachineMgmt:
         self.config.port = ctx.nutanix_host_port
         self.config.client_certificate_file = ctx.nutanix_client_certificate_file
         self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
+        self.config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
+        self.config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
 
         # Prism config for task polling
         self.prism_config = prism.Configuration()
@@ -59,6 +61,8 @@ class VirtualMachineMgmt:
         self.prism_config.root_ca_certificate_file = (
             ctx.nutanix_root_ca_certificate_file
         )
+        self.prism_config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
+        self.prism_config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
 
     @property
     def client(self) -> vmm.ApiClient:
