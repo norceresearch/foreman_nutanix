@@ -50,7 +50,8 @@ class Networking:
         """
         subnets: list[net.Subnet] = paginate(self.subnets_api.list_subnets)
         return [
-            SubnetMetadata.from_nutanix_subnet(subnet, cluster_map) for subnet in subnets
+            SubnetMetadata.from_nutanix_subnet(subnet, cluster_map)
+            for subnet in subnets
         ]
 
 
