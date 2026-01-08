@@ -42,10 +42,19 @@ class Networking:
             self._subnets_api = net.SubnetsApi(api_client=self.client)
         return self._subnets_api
 
-    def list_subnets(self) -> list[SubnetMetadata]:
-        """Return list of available subnets/networks"""
+    def list_subnets(
+        self, cluster_map: dict[str, str] | None = None
+    ) -> list[SubnetMetadata]:
+        """Return list of available subnets/networks
+
+        Args:
+            cluster_map: Optional mapping of cluster ext_id -> cluster name.
+                         Used to resolve cluster names for subnets.
+        """
         subnets: list[net.Subnet] = paginate(self.subnets_api.list_subnets)
-        return [SubnetMetadata.from_nutanix_subnet(subnet) for subnet in subnets]
+        return [
+            SubnetMetadata.from_nutanix_subnet(subnet, cluster_map) for subnet in subnets
+        ]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -71,8 +80,15 @@ class SubnetMetadata:
     vpc_reference: None | str
 
     @classmethod
-    def from_nutanix_subnet(cls, subnet: net.Subnet) -> Self:
-        """Convert Nutanix SDK Subnet to our response model"""
+    def from_nutanix_subnet(
+        cls, subnet: net.Subnet, cluster_map: dict[str, str] | None = None
+    ) -> Self:
+        """Convert Nutanix SDK Subnet to our response model
+
+        Args:
+            subnet: The Nutanix SDK Subnet object
+            cluster_map: Optional mapping of cluster ext_id -> cluster name
+        """
         # Extract IPv4 configuration if available
         ipv4_subnet = None
         ipv4_gateway = None
@@ -104,16 +120,30 @@ class SubnetMetadata:
                         str, ipv4_config.dhcp_server_address.value
                     )
 
-        # Check if cluster_ext_id exists (it might be in cluster_reference)
+        # Extract cluster_ext_id - try multiple possible attribute names
+        # The Nutanix SDK uses different names in different API versions
         cluster_ext_id = None
-        if hasattr(subnet, "cluster_ext_id"):
+
+        # Try direct cluster_ext_id attribute
+        if hasattr(subnet, "cluster_ext_id") and subnet.cluster_ext_id:
             cluster_ext_id = subnet.cluster_ext_id  # type: ignore
+        # Try "cluster" attribute (like VMs use) - could be object or string
+        elif hasattr(subnet, "cluster") and subnet.cluster:
+            if isinstance(subnet.cluster, str):
+                cluster_ext_id = subnet.cluster
+            elif hasattr(subnet.cluster, "ext_id"):
+                cluster_ext_id = subnet.cluster.ext_id
+        # Try "cluster_reference" attribute - could be object or string
         elif hasattr(subnet, "cluster_reference") and subnet.cluster_reference:
-            cluster_ext_id = (
-                subnet.cluster_reference.ext_id
-                if hasattr(subnet.cluster_reference, "ext_id")
-                else None
-            )
+            if isinstance(subnet.cluster_reference, str):
+                cluster_ext_id = subnet.cluster_reference
+            elif hasattr(subnet.cluster_reference, "ext_id"):
+                cluster_ext_id = subnet.cluster_reference.ext_id
+
+        # Resolve cluster name from cluster_ext_id using the provided map
+        cluster_name = None
+        if cluster_ext_id and cluster_map:
+            cluster_name = cluster_map.get(cluster_ext_id)
 
         return cls(
             ext_id=cast(str, subnet.ext_id),
@@ -121,7 +151,7 @@ class SubnetMetadata:
             description=subnet.description,
             subnet_type=str(subnet.subnet_type) if subnet.subnet_type else None,
             network_id=subnet.network_id,
-            cluster_name=subnet.cluster_name,
+            cluster_name=cluster_name,
             cluster_ext_id=cluster_ext_id,
             ipv4_subnet=ipv4_subnet,
             ipv4_gateway=ipv4_gateway,

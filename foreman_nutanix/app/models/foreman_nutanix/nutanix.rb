@@ -86,10 +86,12 @@ module ForemanNutanix
       data = JSON.parse(response.body)
 
       data.map do |network|
+        cluster_suffix = network['cluster_name'] ? " (#{network['cluster_name']})" : ''
+
         OpenStruct.new({
           id: network['ext_id'],
           ext_id: network['ext_id'],
-          name: network['name'],
+          name: "#{network['name']}#{cluster_suffix}",
           subnet_type: network['subnet_type'],
           cluster_name: network['cluster_name'],
           ipv4_subnet: network['ipv4_subnet'],
