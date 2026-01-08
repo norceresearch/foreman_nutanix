@@ -85,13 +85,15 @@ module ForemanNutanix
       response = Net::HTTP.get_response(uri)
       data = JSON.parse(response.body)
 
-      data.map do |network|
-        cluster_suffix = network['cluster_name'] ? " (#{network['cluster_name']})" : ''
+      # Filter networks by the cluster associated with this compute resource
+      cluster_ext_id = cluster
+      filtered_data = data.select { |network| network['cluster_ext_id'] == cluster_ext_id }
 
+      filtered_data.map do |network|
         OpenStruct.new({
           id: network['ext_id'],
           ext_id: network['ext_id'],
-          name: "#{network['name']}#{cluster_suffix}",
+          name: network['name'],
           subnet_type: network['subnet_type'],
           cluster_name: network['cluster_name'],
           ipv4_subnet: network['ipv4_subnet'],
