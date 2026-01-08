@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
-import logging
 from typing import Self, cast
 
 import ntnx_networking_py_client as net
 
 from nutanix_shim_server import server
 from nutanix_shim_server.utils import paginate
-
-logger = logging.getLogger(__name__)
 
 
 class Networking:
