@@ -7,7 +7,7 @@ from typing import Self, cast
 import ntnx_clustermgmt_py_client as cm
 
 from nutanix_shim_server import server
-from nutanix_shim_server.utils import paginate
+from nutanix_shim_server.utils import add_default_headers, configure_sdk, paginate
 
 
 class ClusterMgmt:
@@ -15,25 +15,13 @@ class ClusterMgmt:
 
     def __init__(self, ctx: server.Context):
         self.config = cm.Configuration()
-        self.config.host = ctx.nutanix_host
-        self.config.scheme = ctx.nutanix_host_scheme
-        self.config.set_api_key(ctx.nutanix_api_key)
-        self.config.max_retry_attempts = 3
-        self.config.backoff_factor = 3
-        self.config.verify_ssl = ctx.nutanix_host_verify_ssl
-        self.config.port = ctx.nutanix_host_port
-        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
-        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
-        self.config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
-        self.config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
+        configure_sdk(self.config, ctx)
 
     @property
     def client(self) -> cm.ApiClient:
         if not hasattr(self, "_client"):
             self._client = cm.ApiClient(self.config)
-            self._client.add_default_header(
-                header_name="Accept-Encoding", header_value="gzip, deflate, br"
-            )
+            add_default_headers(self._client)
         return self._client
 
     @property
