@@ -1,11 +1,40 @@
-from typing import Callable, Concatenate, TypeVar
+from typing import TYPE_CHECKING, Callable, Concatenate, TypeVar
 
 from ntnx_vmm_py_client import ApiResponseMetadata
+
+if TYPE_CHECKING:
+    from nutanix_shim_server.server import Context
 
 ResponseType = TypeVar("ResponseType")
 Page = TypeVar("Page", bound="int")
 Kwargs = TypeVar("Kwargs", bound=dict)
 T = TypeVar("T")
+
+
+def configure_sdk(config, ctx: "Context") -> None:
+    """Configure a Nutanix SDK Configuration object from Context.
+
+    All Nutanix SDK packages (vmm, networking, clustermgmt, prism) use the same
+    Configuration interface, so this works for any of them.
+    """
+    config.host = ctx.nutanix_host
+    config.scheme = ctx.nutanix_host_scheme
+    config.set_api_key(ctx.nutanix_api_key)
+    config.max_retry_attempts = 3
+    config.backoff_factor = 3
+    config.verify_ssl = ctx.nutanix_host_verify_ssl
+    config.port = ctx.nutanix_host_port
+    config.client_certificate_file = ctx.nutanix_client_certificate_file
+    config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
+    config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
+    config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
+
+
+def add_default_headers(client) -> None:
+    """Add default headers to a Nutanix SDK ApiClient."""
+    client.add_default_header(
+        header_name="Accept-Encoding", header_value="gzip, deflate, br"
+    )
 
 
 def paginate(op: Callable[Concatenate[...], ResponseType], **kwargs) -> list[object]:

@@ -26,7 +26,7 @@ from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
 )
 
 from nutanix_shim_server import server
-from nutanix_shim_server.utils import paginate
+from nutanix_shim_server.utils import add_default_headers, configure_sdk, paginate
 
 logger = logging.getLogger(__name__)
 
@@ -36,50 +36,24 @@ class VirtualMachineMgmt:
 
     def __init__(self, ctx: server.Context):
         self.config = vmm.Configuration()
-        self.config.host = ctx.nutanix_host
-        self.config.scheme = ctx.nutanix_host_scheme
-        self.config.set_api_key(ctx.nutanix_api_key)
-        self.config.max_retry_attempts = 3
-        self.config.backoff_factor = 3
-        self.config.verify_ssl = ctx.nutanix_host_verify_ssl
-        self.config.port = ctx.nutanix_host_port
-        self.config.client_certificate_file = ctx.nutanix_client_certificate_file
-        self.config.root_ca_certificate_file = ctx.nutanix_root_ca_certificate_file
-        self.config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
-        self.config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
+        configure_sdk(self.config, ctx)
 
         # Prism config for task polling
         self.prism_config = prism.Configuration()
-        self.prism_config.host = ctx.nutanix_host
-        self.prism_config.scheme = ctx.nutanix_host_scheme
-        self.prism_config.set_api_key(ctx.nutanix_api_key)
-        self.prism_config.max_retry_attempts = 3
-        self.prism_config.backoff_factor = 3
-        self.prism_config.verify_ssl = ctx.nutanix_host_verify_ssl
-        self.prism_config.port = ctx.nutanix_host_port
-        self.prism_config.client_certificate_file = ctx.nutanix_client_certificate_file
-        self.prism_config.root_ca_certificate_file = (
-            ctx.nutanix_root_ca_certificate_file
-        )
-        self.prism_config.connect_timeout = ctx.nutanix_connect_timeout_secs * 1000
-        self.prism_config.read_timeout = ctx.nutanix_read_timeout_secs * 1000
+        configure_sdk(self.prism_config, ctx)
 
     @property
     def client(self) -> vmm.ApiClient:
         if not hasattr(self, "_client"):
             self._client = vmm.ApiClient(self.config)
-            self._client.add_default_header(
-                header_name="Accept-Encoding", header_value="gzip, deflate, br"
-            )
+            add_default_headers(self._client)
         return self._client
 
     @property
     def prism_client(self) -> prism.ApiClient:
         if not hasattr(self, "_prism_client"):
             self._prism_client = prism.ApiClient(self.prism_config)
-            self._prism_client.add_default_header(
-                header_name="Accept-Encoding", header_value="gzip, deflate, br"
-            )
+            add_default_headers(self._prism_client)
         return self._prism_client
 
     @property
