@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from nutanix_shim_server.clustermgmt import ClusterMgmt
 from nutanix_shim_server.networking import Networking, SubnetMetadata
 
 router = APIRouter(prefix="/api/v1/networking", tags=["Networking"])
@@ -42,5 +43,10 @@ router = APIRouter(prefix="/api/v1/networking", tags=["Networking"])
     """,
 )
 def list_networks(request: Request) -> list[SubnetMetadata]:
+    # Build cluster ext_id -> name mapping for resolving cluster names
+    clustermgmt: ClusterMgmt = request.app.state.clustermgmt
+    clusters = clustermgmt.list_clusters()
+    cluster_map = {cluster.ext_id: cluster.name for cluster in clusters}
+
     api: Networking = request.app.state.networking
-    return api.list_subnets()
+    return api.list_subnets(cluster_map)
