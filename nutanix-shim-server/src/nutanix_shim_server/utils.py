@@ -1,9 +1,14 @@
+import functools
+import logging
 from typing import TYPE_CHECKING, Callable, Concatenate, TypeVar
 
 from ntnx_vmm_py_client import ApiResponseMetadata
+from urllib3.exceptions import MaxRetryError, ReadTimeoutError
 
 if TYPE_CHECKING:
     from nutanix_shim_server.server import Context
+
+logger = logging.getLogger(__name__)
 
 ResponseType = TypeVar("ResponseType")
 Page = TypeVar("Page", bound="int")
@@ -35,6 +40,30 @@ def add_default_headers(client) -> None:
     client.add_default_header(
         header_name="Accept-Encoding", header_value="gzip, deflate, br"
     )
+
+
+def retry_on_timeout(func):
+    """Decorator that retries once with a fresh client on read timeout.
+
+    On ReadTimeoutError or MaxRetryError, clears cached clients by calling
+    the instance's _clear_clients() method (if it exists), then retries once.
+
+    This helps recover from stale connection pool issues.
+    """
+
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except (ReadTimeoutError, MaxRetryError) as e:
+            logger.warning(
+                f"Timeout in {func.__name__}, clearing clients and retrying: {e}"
+            )
+            if hasattr(self, "_clear_clients"):
+                self._clear_clients()
+            return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 def paginate(op: Callable[Concatenate[...], ResponseType], **kwargs) -> list[object]:

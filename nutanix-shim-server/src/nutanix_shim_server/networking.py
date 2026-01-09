@@ -6,7 +6,12 @@ from typing import Self, cast
 import ntnx_networking_py_client as net
 
 from nutanix_shim_server import server
-from nutanix_shim_server.utils import add_default_headers, configure_sdk, paginate
+from nutanix_shim_server.utils import (
+    add_default_headers,
+    configure_sdk,
+    paginate,
+    retry_on_timeout,
+)
 
 
 class Networking:
@@ -15,6 +20,13 @@ class Networking:
     def __init__(self, ctx: server.Context):
         self.config = net.Configuration()
         configure_sdk(self.config, ctx)
+
+    def _clear_clients(self) -> None:
+        """Clear cached clients to force re-creation on next access."""
+        if hasattr(self, "_client"):
+            del self._client
+        if hasattr(self, "_subnets_api"):
+            del self._subnets_api
 
     @property
     def client(self) -> net.ApiClient:
@@ -29,6 +41,7 @@ class Networking:
             self._subnets_api = net.SubnetsApi(api_client=self.client)
         return self._subnets_api
 
+    @retry_on_timeout
     def list_subnets(
         self, cluster_map: dict[str, str] | None = None
     ) -> list[SubnetMetadata]:

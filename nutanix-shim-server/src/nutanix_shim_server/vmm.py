@@ -26,7 +26,12 @@ from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
 )
 
 from nutanix_shim_server import server
-from nutanix_shim_server.utils import add_default_headers, configure_sdk, paginate
+from nutanix_shim_server.utils import (
+    add_default_headers,
+    configure_sdk,
+    paginate,
+    retry_on_timeout,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,19 @@ class VirtualMachineMgmt:
         # Prism config for task polling
         self.prism_config = prism.Configuration()
         configure_sdk(self.prism_config, ctx)
+
+    def _clear_clients(self) -> None:
+        """Clear cached clients to force re-creation on next access."""
+        if hasattr(self, "_client"):
+            del self._client
+        if hasattr(self, "_prism_client"):
+            del self._prism_client
+        if hasattr(self, "_tasks_api"):
+            del self._tasks_api
+        if hasattr(self, "_images_api"):
+            del self._images_api
+        if hasattr(self, "_vms_api"):
+            del self._vms_api
 
     @property
     def client(self) -> vmm.ApiClient:
@@ -74,16 +92,19 @@ class VirtualMachineMgmt:
             self._vms_api = vmm.VmApi(self.client)
         return self._vms_api
 
+    @retry_on_timeout
     def list_images(self) -> list[ImageMetadata]:
         images: list[vmm.Image] = paginate(self.images_api.list_images)
         return [ImageMetadata.from_nutanix_image(img) for img in images]
 
+    @retry_on_timeout
     def list_vms(self) -> list["VmListMetadata"]:
         """List all VMs in the Nutanix environment"""
         data: list[vmm.AhvConfigVm] = paginate(self.vms_api.list_vms)
         vms = [VmListMetadata.from_nutanix_vm(vm) for vm in data]
         return vms
 
+    @retry_on_timeout
     def get_vm_details(self, vm_ext_id: str) -> "VmDetailsMetadata":
         """
         Get detailed information about a VM including MAC address and IP addresses.
@@ -100,6 +121,7 @@ class VirtualMachineMgmt:
         vm: vmm.AhvConfigVm = resp.data  # type: ignore
         return VmDetailsMetadata.from_nutanix_vm(vm)
 
+    @retry_on_timeout
     def get_vm_power_state(self, vm_ext_id: str) -> "VmPowerStateResponse":
         """
         Get the current power state of a VM.
@@ -121,6 +143,7 @@ class VirtualMachineMgmt:
             power_state=power_state,
         )
 
+    @retry_on_timeout
     def set_vm_power_state(
         self, vm_ext_id: str, action: "PowerAction"
     ) -> "VmPowerStateResponse":
@@ -157,6 +180,7 @@ class VirtualMachineMgmt:
 
         return self.get_vm_power_state(vm_ext_id)
 
+    @retry_on_timeout
     def delete_vm(self, vm_ext_id: str) -> None:
         """
         Delete a virtual machine.
@@ -176,6 +200,7 @@ class VirtualMachineMgmt:
         # Delete with the ETag header
         self.vms_api.delete_vm_by_id(extId=vm_ext_id, if_match=etag)
 
+    @retry_on_timeout
     def provision_vm(self, request: "VmProvisionRequest") -> "VmMetadata":
         """
         Provision a new VM with network (not image-based), CPU, memory, and disk configuration.
