@@ -7,7 +7,12 @@ from typing import Self, cast
 import ntnx_clustermgmt_py_client as cm
 
 from nutanix_shim_server import server
-from nutanix_shim_server.utils import add_default_headers, configure_sdk, paginate
+from nutanix_shim_server.utils import (
+    add_default_headers,
+    configure_sdk,
+    paginate,
+    retry_on_timeout,
+)
 
 
 class ClusterMgmt:
@@ -16,6 +21,15 @@ class ClusterMgmt:
     def __init__(self, ctx: server.Context):
         self.config = cm.Configuration()
         configure_sdk(self.config, ctx)
+
+    def _clear_clients(self) -> None:
+        """Clear cached clients to force re-creation on next access."""
+        if hasattr(self, "_client"):
+            del self._client
+        if hasattr(self, "_storage_containers_api"):
+            del self._storage_containers_api
+        if hasattr(self, "_clusters_api"):
+            del self._clusters_api
 
     @property
     def client(self) -> cm.ApiClient:
@@ -32,6 +46,7 @@ class ClusterMgmt:
             )
         return self._storage_containers_api
 
+    @retry_on_timeout
     def list_storage_containers(self) -> list[StorageContainerMetadata]:
         """Return list of storage containers"""
         containers: list[cm.StorageContainer] = paginate(
@@ -48,11 +63,13 @@ class ClusterMgmt:
             self._clusters_api = cm.ClustersApi(api_client=self.client)
         return self._clusters_api
 
+    @retry_on_timeout
     def list_clusters(self) -> list[ClusterMetadata]:
         """Return list of clusters"""
         clusters: list[cm.Cluster] = paginate(self.clusters_api.list_clusters)
         return [ClusterMetadata.from_nutanix_cluster(cluster) for cluster in clusters]
 
+    @retry_on_timeout
     def get_cluster_stats(self, cluster_ext_id: str) -> ClusterResourceStats:
         """Get resource usage statistics for a specific cluster
 
