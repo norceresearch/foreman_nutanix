@@ -67,12 +67,12 @@ compute_resource.available_storage_containers,
 } %>
 
 <%= checkbox_f f,
-:power_on,
+:start,
 {
-  label: _("Power On After Creation"),
+  label: _("Start After Creation"),
   help_inline:
     _(
-      "Automatically power on the VM after it is created. If power-on fails, the VM will be deleted.",
+      "Start the VM after Foreman completes all provisioning steps (DHCP, DNS, TFTP, etc.)",
     ),
   checked: true,
 } %>

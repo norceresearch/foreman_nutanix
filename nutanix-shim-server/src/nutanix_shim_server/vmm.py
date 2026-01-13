@@ -299,113 +299,9 @@ class VirtualMachineMgmt:
                         vm_ext_id = entity.ext_id
                         logger.info(f"VM created successfully with ext_id: {vm_ext_id}")
 
-                        # Handle power-on if requested
-                        if request.power_on:
-                            try:
-                                logger.info(
-                                    f"Power-on requested, powering on VM {vm_ext_id}..."
-                                )
-                                # Fetch VM to get ETag (required for power-on operation)
-                                get_resp = self.vms_api.get_vm_by_id(extId=vm_ext_id)
-                                etag = self.client.get_etag(get_resp)
-                                self.vms_api.power_on_vm(extId=vm_ext_id, if_match=etag)
-
-                                # Verify VM actually powered on
-                                logger.info(f"Verifying VM power state...")
-                                power_on_verified = False
-                                power_check_timeout = 60  # 60 seconds to power on
-                                power_check_interval = 3
-                                power_elapsed = 0
-
-                                while power_elapsed < power_check_timeout:
-                                    try:
-                                        power_resp = self.vms_api.get_vm_by_id(
-                                            extId=vm_ext_id
-                                        )
-                                        vm_data = power_resp.data  # type: ignore
-                                        current_power_state = (
-                                            str(vm_data.power_state)
-                                            if vm_data.power_state
-                                            else "UNKNOWN"
-                                        )
-                                        logger.info(
-                                            f"Current power state: {current_power_state}"
-                                        )
-
-                                        if current_power_state == "ON":
-                                            logger.info(
-                                                f"VM {vm_ext_id} successfully powered on"
-                                            )
-                                            power_on_verified = True
-                                            break
-
-                                        time.sleep(power_check_interval)
-                                        power_elapsed += power_check_interval
-                                    except Exception as check_error:
-                                        logger.warning(
-                                            f"Error checking power state: {check_error}"
-                                        )
-                                        time.sleep(power_check_interval)
-                                        power_elapsed += power_check_interval
-
-                                if not power_on_verified:
-                                    # Power-on failed, rollback by deleting the VM
-                                    error_msg = f"VM created but failed to power on within {power_check_timeout} seconds"
-                                    logger.error(
-                                        f"{error_msg}, rolling back by deleting VM {vm_ext_id}"
-                                    )
-
-                                    try:
-                                        # Delete the VM
-                                        get_resp = self.vms_api.get_vm_by_id(
-                                            extId=vm_ext_id
-                                        )
-                                        etag = self.client.get_etag(get_resp)
-                                        self.vms_api.delete_vm_by_id(
-                                            extId=vm_ext_id, if_match=etag
-                                        )
-                                        logger.info(
-                                            f"VM {vm_ext_id} deleted successfully during rollback"
-                                        )
-                                    except Exception as delete_error:
-                                        logger.error(
-                                            f"Failed to delete VM during rollback: {delete_error}"
-                                        )
-                                        error_msg += f". Additionally, failed to delete VM: {delete_error}"
-
-                                    raise RuntimeError(error_msg)
-
-                            except RuntimeError:
-                                # Re-raise RuntimeError from power-on verification failure
-                                raise
-                            except Exception as power_error:
-                                # Power-on command itself failed, rollback
-                                error_msg = f"Failed to power on VM: {power_error}"
-                                logger.error(
-                                    f"{error_msg}, rolling back by deleting VM {vm_ext_id}"
-                                )
-
-                                try:
-                                    # Delete the VM
-                                    get_resp = self.vms_api.get_vm_by_id(
-                                        extId=vm_ext_id
-                                    )
-                                    etag = self.client.get_etag(get_resp)
-                                    self.vms_api.delete_vm_by_id(
-                                        extId=vm_ext_id, if_match=etag
-                                    )
-                                    logger.info(
-                                        f"VM {vm_ext_id} deleted successfully during rollback"
-                                    )
-                                except Exception as delete_error:
-                                    logger.error(
-                                        f"Failed to delete VM during rollback: {delete_error}"
-                                    )
-                                    error_msg += f". Additionally, failed to delete VM: {delete_error}"
-
-                                raise RuntimeError(error_msg)
-                        else:
-                            logger.info("Power-on not requested, VM will remain off")
+                        # Note: Power-on is handled separately by Foreman after
+                        # orchestration completes, not during provisioning.
+                        # Use the set_vm_power_state endpoint to power on the VM.
 
                         return VmMetadata(
                             ext_id=vm_ext_id,
@@ -667,6 +563,9 @@ class VmProvisionRequest:
     """
     Request model for provisioning a new VM.
 
+    Note: VMs are always created in OFF state. Power-on is handled separately
+    by calling the set_vm_power_state endpoint after Foreman orchestration completes.
+
     Example:
         {
             "name": "my-vm-01",
@@ -678,7 +577,6 @@ class VmProvisionRequest:
             "num_cores_per_socket": 2,
             "memory_size_bytes": 8589934592,  # 8 GB
             "disk_size_bytes": 107374182400,   # 100 GB
-            "power_on": true,                  # Auto power-on after creation
             "boot_method": "uefi",             # uefi | bios
             "secure_boot": true,               # secure boot conf - applicable only to UEFI
         }
@@ -693,7 +591,6 @@ class VmProvisionRequest:
     memory_size_bytes: int
     disk_size_bytes: int
     description: str = ""
-    power_on: bool = True
     boot_method: Literal["bios", "uefi"] = "uefi"
     secure_boot: bool = False
 

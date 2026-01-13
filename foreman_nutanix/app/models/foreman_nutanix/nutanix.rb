@@ -226,23 +226,10 @@ module ForemanNutanix
       raise e
     end
 
-    # Called by Foreman after host orchestration completes
-    # This is where we exit build mode for bare VM provisioning
-    def setHostForOrchestration(host)
-      Rails.logger.info "=== NUTANIX: setHostForOrchestration called for host: #{host.name} ==="
-      super if defined?(super)
-
-      # Auto-exit build mode for bare VM provisioning
-      # Since we're not installing an OS, the host will never callback naturally
-      if host && host.build?
-        Rails.logger.info "=== NUTANIX: Auto-exiting build mode for host #{host.name} ==="
-        host.build = false
-        host.save!
-      end
-    rescue StandardError => e
-      Rails.logger.error "=== NUTANIX: Error in setHostForOrchestration: #{e.message} ==="
-      # Don't fail the whole provisioning if this fails
-    end
+    # Note: Power-on after provisioning is handled by Foreman's built-in
+    # setComputePowerUp orchestration task (priority 1000) which runs last.
+    # It's triggered when compute_attributes[:start] == '1' and calls start_vm(uuid).
+    # VMs are always created in OFF state by the shim server.
 
     # New VM instance (not persisted)
     def new_vm(attr = {})
