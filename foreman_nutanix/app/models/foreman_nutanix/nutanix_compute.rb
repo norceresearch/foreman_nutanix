@@ -6,7 +6,7 @@ module ForemanNutanix
       :cpus, :memory, :power_state, :subnet_ext_id,
       :storage_container_ext_id, :num_sockets, :num_cores_per_socket,
       :disk_size_bytes, :description, :network_id, :storage_container,
-      :disk_size_gb, :power_on, :mac_address, :vm_ip_addresses, :create_time,
+      :disk_size_gb, :mac_address, :vm_ip_addresses, :create_time,
       :boot_method, :secure_boot, :gpus
 
     def initialize(cluster = nil, args = {})
@@ -30,7 +30,6 @@ module ForemanNutanix
       @network_id = args[:network_id] || args[:network]
       @storage_container = args[:storage_container]
       @disk_size_gb = args[:disk_size_gb] || 50
-      @power_on = args.key?(:power_on) ? args[:power_on] : true # Default to true
       @subnet_ext_id = args[:subnet_ext_id] || @network_id
       @storage_container_ext_id = args[:storage_container_ext_id] || @storage_container
       @num_sockets = args[:num_sockets] || 1
@@ -79,6 +78,10 @@ module ForemanNutanix
         raise StandardError, 'Storage Container is required for VM provisioning'
       end
 
+      # Note: VMs are always provisioned in OFF state.
+      # Power-on is handled by Foreman's built-in setComputePowerUp orchestration
+      # task (priority 1000) which runs after all other provisioning steps complete.
+      # It's triggered when compute_attributes[:start] == '1'.
       provision_request = {
         name: @name,
         cluster_ext_id: @cluster,
@@ -89,7 +92,6 @@ module ForemanNutanix
         memory_size_bytes: memory_bytes,
         disk_size_bytes: actual_disk_bytes.to_i,
         description: @description || '',
-        power_on: @power_on.nil? || @power_on, # Default to true if not set
         secure_boot: @secure_boot,
         boot_method: @boot_method,
       }
