@@ -355,6 +355,48 @@ class ImageMetadata:
 
 
 @dataclasses.dataclass(frozen=True)
+class GpuMetadata:
+    """
+    Metadata for a single GPU attached to a VM.
+
+    Flat translation of the SDK's `vmm.Gpu`. `mode` and `vendor` are SDK enums
+    (GpuMode / GpuVendor) and are stringified, the same way `power_state` is.
+    `pci_address` is deliberately not exposed: it is a nested SBDF object with
+    no consumer today.
+    """
+
+    ext_id: None | str
+    name: None | str
+    mode: None | str
+    vendor: None | str
+    device_id: None | int
+    fraction: None | int
+    frame_buffer_size_bytes: None | int
+    num_virtual_display_heads: None | int
+    guest_driver_version: None | str
+
+    @classmethod
+    def from_nutanix_gpu(cls, gpu: vmm.Gpu) -> Self:
+        """Convert Nutanix SDK Gpu to our response model"""
+        return cls(
+            ext_id=gpu.ext_id,
+            name=gpu.name,
+            mode=str(gpu.mode) if gpu.mode else None,
+            vendor=str(gpu.vendor) if gpu.vendor else None,
+            device_id=gpu.device_id,
+            fraction=gpu.fraction,
+            frame_buffer_size_bytes=gpu.frame_buffer_size_bytes,
+            num_virtual_display_heads=gpu.num_virtual_display_heads,
+            guest_driver_version=gpu.guest_driver_version,
+        )
+
+
+def _gpus_from_vm(vm: vmm.AhvConfigVm) -> list[GpuMetadata]:
+    """Translate a VM's attached GPUs, if any."""
+    return [GpuMetadata.from_nutanix_gpu(gpu) for gpu in vm.gpus or []]
+
+
+@dataclasses.dataclass(frozen=True)
 class VmListMetadata:
     """
     Metadata for listing VMs.
@@ -374,6 +416,7 @@ class VmListMetadata:
     ip_addresses: list[str]
     create_time: None | datetime.datetime
     disk_size_bytes: None | int
+    gpus: list[GpuMetadata]
 
     @classmethod
     def from_nutanix_vm(cls, vm: vmm.AhvConfigVm) -> Self:
@@ -421,6 +464,7 @@ class VmListMetadata:
             ip_addresses=ip_addresses,
             create_time=vm.create_time if hasattr(vm, "create_time") else None,
             disk_size_bytes=disk_size_bytes,
+            gpus=_gpus_from_vm(vm),
         )
 
 
@@ -446,7 +490,7 @@ class VmDetailsMetadata:
     create_time: None | datetime.datetime
     boot_method: None | str
     secure_boot: None | bool
-    gpus: None | list[str]
+    gpus: list[GpuMetadata]
     disk_size_bytes: None | int
     container_id: None | str
 
@@ -488,12 +532,6 @@ class VmDetailsMetadata:
                     if ip_addr and hasattr(ip_addr, "value"):
                         ip_addresses.append(ip_addr.value)
 
-        # Initial info about GPUs (if any)
-        gpus: list[str] = []
-        gpu: vmm.Gpu
-        for gpu in vm.gpus or []:
-            gpus.append(str(gpu.device_id or "unknown device id"))
-
         # Get boot disk size
         # TODO: Can potentially be more than one disk - right now we assume one
         #       since ability to add more is not implemented.
@@ -534,7 +572,7 @@ class VmDetailsMetadata:
             create_time=vm.create_time if hasattr(vm, "create_time") else None,
             boot_method=boot_method,
             secure_boot=secure_boot,
-            gpus=[g.device_id for g in vm.gpus or []],
+            gpus=_gpus_from_vm(vm),
             disk_size_bytes=disk_size_bytes,
             container_id=container_id,
         )

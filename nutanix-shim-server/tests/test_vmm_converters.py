@@ -31,6 +31,7 @@ from ntnx_vmm_py_client.models.vmm.v4.ahv.config.VmDisk import (
     VmDiskContainerReference,
 )
 from nutanix_shim_server.vmm import (
+    GpuMetadata,
     ImageMetadata,
     VmDetailsMetadata,
     VmListMetadata,
@@ -39,6 +40,20 @@ from nutanix_shim_server.vmm import (
 )
 
 from .conftest import Stub
+
+# The GPU that make_vm() attaches, as it comes out the other side. Shared by the
+# list and detail assertions so the two can never drift apart.
+EXPECTED_GPU = GpuMetadata(
+    ext_id=None,
+    name="Tesla T4",
+    mode="PASSTHROUGH_GRAPHICS",
+    vendor="NVIDIA",
+    device_id=42,
+    fraction=None,
+    frame_buffer_size_bytes=None,
+    num_virtual_display_heads=None,
+    guest_driver_version=None,
+)
 
 VM_EXT_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 CLUSTER_EXT_ID = "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
@@ -93,6 +108,9 @@ def make_vm(**overrides) -> vmm.AhvConfigVm:
 
     gpu = vmm.Gpu()
     gpu.device_id = 42
+    gpu.name = "Tesla T4"
+    gpu.mode = vmm.GpuMode.PASSTHROUGH_GRAPHICS
+    gpu.vendor = vmm.GpuVendor.NVIDIA
 
     defaults = {
         "ext_id": VM_EXT_ID,
@@ -138,6 +156,7 @@ def test_vm_list_metadata_full_vm():
         ip_addresses=["10.0.0.5"],
         create_time=CREATE_TIME,
         disk_size_bytes=107374182400,
+        gpus=[EXPECTED_GPU],
     )
 
 
@@ -204,7 +223,7 @@ def test_vm_details_metadata_full_vm():
         create_time=CREATE_TIME,
         boot_method="uefi",
         secure_boot=True,
-        gpus=[42],
+        gpus=[EXPECTED_GPU],
         disk_size_bytes=107374182400,
         container_id=CONTAINER_EXT_ID,
     )
@@ -353,3 +372,97 @@ def test_image_metadata_raises_when_the_payload_omits_a_declared_key():
 
     with pytest.raises(TypeError, match="size_bytes"):
         ImageMetadata.from_nutanix_image(image)
+
+
+# --------------------------------------------------------------------------
+# GpuMetadata.from_nutanix_gpu
+# --------------------------------------------------------------------------
+
+
+def test_gpu_metadata_translates_every_exposed_field():
+    gpu = vmm.Gpu()
+    gpu.ext_id = "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    gpu.name = "Tesla T4"
+    gpu.mode = vmm.GpuMode.VIRTUAL
+    gpu.vendor = vmm.GpuVendor.NVIDIA
+    gpu.device_id = 7864
+    gpu.fraction = 50
+    gpu.frame_buffer_size_bytes = 16106127360
+    gpu.num_virtual_display_heads = 4
+    gpu.guest_driver_version = "535.129.03"
+
+    assert GpuMetadata.from_nutanix_gpu(gpu) == GpuMetadata(
+        ext_id="8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+        name="Tesla T4",
+        mode="VIRTUAL",
+        vendor="NVIDIA",
+        device_id=7864,
+        fraction=50,
+        frame_buffer_size_bytes=16106127360,
+        num_virtual_display_heads=4,
+        guest_driver_version="535.129.03",
+    )
+
+
+def test_gpu_metadata_device_id_stays_an_int():
+    # Regression: the field was annotated list[str] while being populated with
+    # the SDK's int device_id. The SDK declares Gpu.device_id as int.
+    gpu = vmm.Gpu()
+    gpu.device_id = 7864
+    device_id = GpuMetadata.from_nutanix_gpu(gpu).device_id
+    assert device_id == 7864
+    assert isinstance(device_id, int)
+
+
+def test_gpu_metadata_bare_gpu_is_all_none():
+    result = GpuMetadata.from_nutanix_gpu(vmm.Gpu())
+    assert result == GpuMetadata(
+        ext_id=None,
+        name=None,
+        mode=None,
+        vendor=None,
+        device_id=None,
+        fraction=None,
+        frame_buffer_size_bytes=None,
+        num_virtual_display_heads=None,
+        guest_driver_version=None,
+    )
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        vmm.GpuMode.PASSTHROUGH_COMPUTE,
+        vmm.GpuMode.PASSTHROUGH_GRAPHICS,
+        vmm.GpuMode.VIRTUAL,
+    ],
+)
+def test_gpu_metadata_stringifies_every_mode(mode):
+    gpu = vmm.Gpu()
+    gpu.mode = mode
+    assert GpuMetadata.from_nutanix_gpu(gpu).mode == str(mode)
+
+
+@pytest.mark.parametrize(
+    "vendor", [vmm.GpuVendor.AMD, vmm.GpuVendor.INTEL, vmm.GpuVendor.NVIDIA]
+)
+def test_gpu_metadata_stringifies_every_vendor(vendor):
+    gpu = vmm.Gpu()
+    gpu.vendor = vendor
+    assert GpuMetadata.from_nutanix_gpu(gpu).vendor == str(vendor)
+
+
+def test_list_and_detail_report_identical_gpus():
+    # The two converters used to disagree: detail emitted raw device ids and
+    # list had no gpus field at all, so the VM index could never show GPUs.
+    vm = make_vm()
+    assert (
+        VmListMetadata.from_nutanix_vm(vm).gpus
+        == VmDetailsMetadata.from_nutanix_vm(vm).gpus
+    )
+
+
+def test_absent_gpus_yields_empty_list_on_both_converters():
+    vm = make_vm(gpus=None)
+    assert VmListMetadata.from_nutanix_vm(vm).gpus == []
+    assert VmDetailsMetadata.from_nutanix_vm(vm).gpus == []
