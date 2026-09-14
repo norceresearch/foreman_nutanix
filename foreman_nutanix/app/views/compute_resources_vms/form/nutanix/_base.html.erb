@@ -66,6 +66,15 @@ compute_resource.available_storage_containers,
   max: 10_000,
 } %>
 
+<%# `checked:` must reflect the saved value, else the box always renders
+#    checked and the compute profile's "off" never survives a page render.
+#    f.object is compute_resource.new_vm(vm_attrs); NutanixCompute has no :start
+#    attribute (its #start is the power-on action), so read the raw args. %>
+<%# NOTE: no params fallback - every render path (profile edit, host form,
+#    failed-create re-render) already builds f.object via new_vm() from the
+#    authoritative attrs, and reading params here would win over a freshly
+#    selected profile on the compute_profile_selected AJAX re-render. %>
+<% start_checked = f.object.try(:args)&.dig(:start) %>
 <%= checkbox_f f,
 :start,
 {
@@ -74,7 +83,7 @@ compute_resource.available_storage_containers,
     _(
       "Start the VM after Foreman completes all provisioning steps (DHCP, DNS, TFTP, etc.)",
     ),
-  checked: true,
+  checked: start_checked.nil? || %w[1 true].include?(start_checked.to_s),
 } %>
 
 <%= select_f f,
