@@ -40,8 +40,9 @@ module ForemanNutanix
       "#{name} (#{provider_friendly_name})"
     end
 
+    # Kept public: app/views/compute_resources/show/_nutanix.html.erb renders it.
     def shim_server_url
-      ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
+      ShimClient.default_base_url
     end
 
     def provided_attributes
@@ -56,10 +57,7 @@ module ForemanNutanix
 
     # Available clusters for selection
     def available_clusters
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-clusters")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
+      data = shim.get('/api/v1/clustermgmt/list-clusters').json
 
       data.map do |cluster|
         cluster[:name] = "#{cluster['name']} (#{cluster['arch']})"
@@ -80,10 +78,7 @@ module ForemanNutanix
     # Available networks for VMs
     def available_networks
       Rails.logger.info '=== NUTANIX: Fetching available networks from shim server ==='
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/networking/list-networks")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
+      data = shim.get('/api/v1/networking/list-networks').json
 
       # Filter networks by the cluster associated with this compute resource
       cluster_ext_id = cluster
@@ -114,10 +109,7 @@ module ForemanNutanix
     # Available storage containers for VMs
     def available_storage_containers
       Rails.logger.info '=== NUTANIX: Fetching available storage containers from shim server ==='
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/list-storage-containers")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
+      data = shim.get('/api/v1/clustermgmt/list-storage-containers').json
 
       # Filter storage containers by the cluster associated with this compute resource
       cluster_ext_id = cluster
@@ -146,13 +138,10 @@ module ForemanNutanix
     # Cluster resource statistics (CPU, memory, storage usage)
     def cluster_resource_stats
       Rails.logger.info '=== NUTANIX: Fetching cluster resource stats from shim server ==='
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
       cluster_id = cluster
       return nil unless cluster_id
 
-      uri = URI("#{base.chomp('/')}/api/v1/clustermgmt/clusters/#{cluster_id}/stats")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
+      data = shim.get("/api/v1/clustermgmt/clusters/#{cluster_id}/stats").json
 
       OpenStruct.new(data)
     rescue StandardError => e
@@ -163,10 +152,7 @@ module ForemanNutanix
     # Available images
     def available_images(_opts = {})
       Rails.logger.info '=== NUTANIX: Fetching available images from shim server ==='
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/list-images")
-      response = Net::HTTP.get_response(uri)
-      data = JSON.parse(response.body)
+      data = shim.get('/api/v1/vmm/list-images').json
 
       # Filter images by cluster if cluster_location_ext_ids is available
       cluster_ext_id = cluster
@@ -286,20 +272,10 @@ module ForemanNutanix
     # Start VM - called by Foreman for power on
     def start_vm(uuid)
       Rails.logger.info "=== NUTANIX: START_VM CALLED with uuid: #{uuid} ==="
-      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+      actual_uuid = ShimClient.normalize_uuid(uuid)
 
-      base = shim_server_url
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
-
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Post.new(uri.path)
-      request['Content-Type'] = 'application/json'
-      request.body = { action: 'POWER_ON' }.to_json
-
-      response = http.request(request)
-      response.is_a?(Net::HTTPSuccess)
+      response = shim.post("/api/v1/vmm/vms/#{actual_uuid}/power-state", { action: 'POWER_ON' })
+      response.success?
     rescue StandardError => e
       Rails.logger.error "=== NUTANIX: START_VM ERROR: #{e.message} ==="
       raise e
@@ -308,20 +284,10 @@ module ForemanNutanix
     # Stop VM - called by Foreman for power off
     def stop_vm(uuid)
       Rails.logger.info "=== NUTANIX: STOP_VM CALLED with uuid: #{uuid} ==="
-      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+      actual_uuid = ShimClient.normalize_uuid(uuid)
 
-      base = shim_server_url
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
-
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Post.new(uri.path)
-      request['Content-Type'] = 'application/json'
-      request.body = { action: 'POWER_OFF' }.to_json
-
-      response = http.request(request)
-      response.is_a?(Net::HTTPSuccess)
+      response = shim.post("/api/v1/vmm/vms/#{actual_uuid}/power-state", { action: 'POWER_OFF' })
+      response.success?
     rescue StandardError => e
       Rails.logger.error "=== NUTANIX: STOP_VM ERROR: #{e.message} ==="
       raise e
@@ -331,14 +297,12 @@ module ForemanNutanix
     def vm_power_state(vm)
       Rails.logger.info "=== NUTANIX: VM_POWER_STATE CALLED for vm: #{vm} ==="
       uuid = vm.respond_to?(:identity) ? vm.identity : vm.to_s
-      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+      actual_uuid = ShimClient.normalize_uuid(uuid)
 
-      base = shim_server_url
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
-      response = Net::HTTP.get_response(uri)
+      response = shim.get("/api/v1/vmm/vms/#{actual_uuid}/power-state")
 
-      if response.is_a?(Net::HTTPSuccess)
-        data = JSON.parse(response.body)
+      if response.success?
+        data = response.json
         state = data['power_state']
         Rails.logger.info "=== NUTANIX: VM_POWER_STATE returning: #{state} ==="
         # Return hash that Foreman expects
@@ -375,19 +339,12 @@ module ForemanNutanix
       return true if uuid.nil? || uuid.to_s.strip.empty?
 
       # Extract the actual UUID if it has a prefix
-      actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+      actual_uuid = ShimClient.normalize_uuid(uuid)
 
       # Call the shim server to delete the VM
-      base = shim_server_url
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}")
+      response = shim.delete("/api/v1/vmm/vms/#{actual_uuid}")
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Delete.new(uri.path)
-      response = http.request(request)
-
-      if response.is_a?(Net::HTTPNoContent) || response.is_a?(Net::HTTPSuccess)
+      if response.no_content? || response.success?
         Rails.logger.info "=== NUTANIX: VM #{actual_uuid} deleted successfully ==="
         true
       else
@@ -454,6 +411,10 @@ module ForemanNutanix
     end
 
     private
+
+    def shim
+      @shim ||= ShimClient.new(shim_server_url)
+    end
 
     def client
       Rails.logger.info "=== NUTANIX: Creating client for cluster #{cluster} ==="

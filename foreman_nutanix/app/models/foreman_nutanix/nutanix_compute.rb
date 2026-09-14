@@ -99,20 +99,10 @@ module ForemanNutanix
       Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="
 
       # Call the shim server to provision the VM
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/provision-vm")
+      response = shim.post('/api/v1/vmm/provision-vm', provision_request)
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Post.new(uri.path)
-      request['Content-Type'] = 'application/json'
-      request.body = provision_request.to_json
-
-      response = http.request(request)
-
-      if response.is_a?(Net::HTTPSuccess)
-        result = JSON.parse(response.body)
+      if response.success?
+        result = response.json
         Rails.logger.info "=== NUTANIX: VM provisioned successfully: #{result} ==="
 
         # Update identity with the real ext_id from Nutanix
@@ -176,22 +166,12 @@ module ForemanNutanix
       return false unless persisted?
 
       # Extract actual UUID (handle ZXJnb24=:uuid format)
-      actual_uuid = @identity.to_s.include?(':') ? @identity.to_s.split(':').last : @identity.to_s
+      actual_uuid = ShimClient.normalize_uuid(@identity)
 
       # Call the shim server to power on the VM
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+      response = shim.post("/api/v1/vmm/vms/#{actual_uuid}/power-state", { action: 'POWER_ON' })
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Post.new(uri.path)
-      request['Content-Type'] = 'application/json'
-      request.body = { action: 'POWER_ON' }.to_json
-
-      response = http.request(request)
-
-      if response.is_a?(Net::HTTPSuccess)
+      if response.success?
         Rails.logger.info "=== NUTANIX: VM #{actual_uuid} powered on successfully ==="
         @power_state = 'ON'
         true
@@ -211,22 +191,12 @@ module ForemanNutanix
       return false unless persisted?
 
       # Extract actual UUID (handle ZXJnb24=:uuid format)
-      actual_uuid = @identity.to_s.include?(':') ? @identity.to_s.split(':').last : @identity.to_s
+      actual_uuid = ShimClient.normalize_uuid(@identity)
 
       # Call the shim server to power off the VM
-      base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-      uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}/power-state")
+      response = shim.post("/api/v1/vmm/vms/#{actual_uuid}/power-state", { action: 'POWER_OFF' })
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-
-      request = Net::HTTP::Post.new(uri.path)
-      request['Content-Type'] = 'application/json'
-      request.body = { action: 'POWER_OFF' }.to_json
-
-      response = http.request(request)
-
-      if response.is_a?(Net::HTTPSuccess)
+      if response.success?
         Rails.logger.info "=== NUTANIX: VM #{actual_uuid} powered off successfully ==="
         @power_state = 'OFF'
         true
@@ -382,6 +352,14 @@ module ForemanNutanix
       Rails.logger.info '=== NUTANIX: NutanixCompute::destroy called ==='
       @persisted = false
       true
+    end
+
+    private
+
+    # NutanixCompute holds no reference to the ComputeResource, so it builds its
+    # own client off the shim server address in the environment.
+    def shim
+      @shim ||= ShimClient.new
     end
   end
 end

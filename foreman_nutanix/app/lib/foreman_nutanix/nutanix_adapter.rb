@@ -33,15 +33,13 @@ module ForemanNutanix
         Rails.logger.info "=== NUTANIX: ServersCollection::get called with uuid: #{uuid} ==="
 
         # Extract the actual UUID if it has a prefix
-        actual_uuid = uuid.to_s.include?(':') ? uuid.to_s.split(':').last : uuid.to_s
+        actual_uuid = ShimClient.normalize_uuid(uuid)
 
         # Fetch full VM details from shim server
-        base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-        uri = URI("#{base.chomp('/')}/api/v1/vmm/vms/#{actual_uuid}")
-        response = Net::HTTP.get_response(uri)
+        response = shim.get("/api/v1/vmm/vms/#{actual_uuid}")
 
-        if response.is_a?(Net::HTTPSuccess)
-          data = JSON.parse(response.body)
+        if response.success?
+          data = response.json
 
           total_cpus = (data['num_sockets'] || 1) * (data['num_cores_per_socket'] || 1)
           memory_gb = data['memory_size_bytes'] ? (data['memory_size_bytes'].to_f / 1024**3).round : 4
@@ -82,10 +80,7 @@ module ForemanNutanix
         Rails.logger.info "=== NUTANIX: ServersCollection::all called with opts: #{opts} ==="
 
         # Fetch VMs from shim server (now includes MAC and IP)
-        base = ENV['NUTANIX_SHIM_SERVER_ADDR'] || 'http://localhost:8000'
-        uri = URI("#{base.chomp('/')}/api/v1/vmm/list-vms")
-        response = Net::HTTP.get_response(uri)
-        data = JSON.parse(response.body)
+        data = shim.get('/api/v1/vmm/list-vms').json
 
         # Filter VMs by cluster
         filtered_data = data.select { |vm| vm['cluster_ext_id'] == @cluster }
@@ -113,6 +108,14 @@ module ForemanNutanix
       rescue StandardError => e
         Rails.logger.error "=== NUTANIX: Error fetching VMs: #{e.message} ==="
         []
+      end
+
+      private
+
+      # ServersCollection holds no reference to the ComputeResource, so it builds
+      # its own client off the shim server address in the environment.
+      def shim
+        @shim ||= ShimClient.new
       end
     end
   end
