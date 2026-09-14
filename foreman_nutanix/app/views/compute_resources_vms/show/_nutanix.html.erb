@@ -53,7 +53,8 @@
     </tr>
     <tr>
       <td><%= _("GPUs") %></td>
-      <td><%= @vm.gpus %></td>
+      <% gpu_labels = @vm.gpu_labels %>
+      <td><%= gpu_labels.any? ? gpu_labels.join(", ") : _("None") %></td>
     </tr>
   </tbody>
 </table>

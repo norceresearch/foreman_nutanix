@@ -101,6 +101,7 @@ module ForemanNutanix
             ip_addresses: vm_data['ip_addresses'] || [],
             create_time: vm_data['create_time'],
             disk_size_gb: vm_data['disk_size_bytes'].to_i / (1024**3),
+            gpus: vm_data['gpus'],
           })
           vm.instance_variable_set(:@persisted, true)
           vm

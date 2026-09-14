@@ -46,8 +46,10 @@ module ForemanNutanix
       @boot_method = args[:boot_method]
       @secure_boot = args[:secure_boot]
 
-      # GPUs
-      @gpus = args[:gpus]
+      # GPUs. Defaults to [] rather than nil: the shim's /list-vms response
+      # carries no gpus field, so VMs built by ServersCollection#all never
+      # receive one, and the index view calls #gpus.empty? on every row.
+      @gpus = args[:gpus] || []
     end
 
     # Required by Foreman - indicates if VM exists
@@ -210,6 +212,20 @@ module ForemanNutanix
       raise e
     end
 
+    # Human-readable GPU labels for the views, e.g. "NVIDIA Tesla T4".
+    # The shim returns each GPU as a hash; a shim older than 0.1.5 omits the
+    # field on /list-vms entirely, which #initialize turns into [].
+    def gpu_labels
+      @gpus.map do |gpu|
+        next gpu.to_s unless gpu.is_a?(Hash)
+
+        name = gpu['name']
+        name = gpu['device_id'] if blank_gpu_field?(name)
+        label = [gpu['vendor'], name].reject { |part| blank_gpu_field?(part) }.join(' ')
+        label.empty? ? 'GPU' : label
+      end
+    end
+
     # Required by Foreman - CPU count
     def cpu
       Rails.logger.info '=== NUTANIX: NutanixCompute::cpu called ==='
@@ -346,6 +362,13 @@ module ForemanNutanix
       Rails.logger.info '=== NUTANIX: NutanixCompute::wait_for called ==='
       yield if block_given?
     end
+
+    # Deliberately not ActiveSupport's #blank?: this class is loaded without
+    # Rails in test/nutanix_compute_test.rb.
+    def blank_gpu_field?(value)
+      value.nil? || value.to_s.strip.empty?
+    end
+    private :blank_gpu_field?
 
     # Required by Foreman - destroy VM
     def destroy
