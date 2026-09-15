@@ -1,14 +1,5 @@
 require 'test_helper'
 
-# NutanixCompute is a plain class, but it logs in #initialize. Stub just enough
-# Rails to load it standalone; see test/README.md.
-require 'logger'
-module Rails
-  def self.logger
-    @logger ||= Logger.new(IO::NULL)
-  end
-end
-
 require 'ostruct'
 require_relative '../app/models/foreman_nutanix/nutanix_compute'
 

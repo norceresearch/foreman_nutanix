@@ -11,6 +11,7 @@ import pytest
 from nutanix_shim_server.clustermgmt import (
     ClusterMetadata,
     ClusterResourceStats,
+    GpuProfileMetadata,
     StorageContainerMetadata,
 )
 
@@ -18,6 +19,8 @@ from .conftest import Stub
 
 CLUSTER_EXT_ID = "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
 CONTAINER_EXT_ID = "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+GPU_PROFILE_EXT_ID = "0005a1b2-1111-2222-3333-444455556666"
+VM_EXT_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
 
 def make_cluster(
@@ -244,3 +247,111 @@ def test_cluster_resource_stats_rounds_percentages_to_two_places():
     result = ClusterResourceStats.from_nutanix_cluster_stats(stats)
 
     assert result.storage_usage_percent == 33.33
+
+
+# --------------------------------------------------------------------------
+# GpuProfileMetadata.from_nutanix_physical_gpu_profile
+# --------------------------------------------------------------------------
+
+
+def make_physical_gpu_profile(
+    gpu_type=cm.GpuType.PASSTHROUGH_GRAPHICS,
+    mode=cm.GpuMode.USED_FOR_PASSTHROUGH,
+) -> cm.PhysicalGpuProfile:
+    config = cm.PhysicalGpuConfig()
+    config.device_id = 7864
+    config.device_name = "Tesla T4"
+    config.vendor_name = "NVIDIA"
+    config.type = gpu_type
+    config.mode = mode
+    config.assignable = 3
+    config.is_in_use = True
+    config.frame_buffer_size_bytes = 16 * 2**30
+    config.numa_node = "0"
+    config.sbdf = "0000:3b:00.0"
+
+    profile = cm.PhysicalGpuProfile()
+    profile.ext_id = GPU_PROFILE_EXT_ID
+    profile.physical_gpu_config = config
+    profile.allocated_vm_ext_ids = [VM_EXT_ID]
+    return profile
+
+
+def test_gpu_profile_metadata_flattens_the_nested_physical_gpu_config():
+    result = GpuProfileMetadata.from_nutanix_physical_gpu_profile(
+        make_physical_gpu_profile()
+    )
+
+    assert result == GpuProfileMetadata(
+        ext_id=GPU_PROFILE_EXT_ID,
+        device_id=7864,
+        device_name="Tesla T4",
+        vendor_name="NVIDIA",
+        gpu_type="PASSTHROUGH_GRAPHICS",
+        assignable=3,
+        is_in_use=True,
+        frame_buffer_size_bytes=16 * 2**30,
+        numa_node="0",
+        sbdf="0000:3b:00.0",
+        allocated_vm_ext_ids=[VM_EXT_ID],
+    )
+
+
+def test_gpu_profile_metadata_tolerates_an_absent_physical_gpu_config():
+    """Consistent with the other converters: an absent nested object degrades
+    to all-None rather than raising."""
+    profile = cm.PhysicalGpuProfile()
+    profile.ext_id = GPU_PROFILE_EXT_ID
+    profile.physical_gpu_config = None
+
+    result = GpuProfileMetadata.from_nutanix_physical_gpu_profile(profile)
+
+    assert result.ext_id == GPU_PROFILE_EXT_ID
+    assert result.device_id is None
+    assert result.device_name is None
+    assert result.vendor_name is None
+    assert result.gpu_type is None
+    assert result.assignable is None
+    assert result.is_in_use is None
+    assert result.frame_buffer_size_bytes is None
+    assert result.numa_node is None
+    assert result.sbdf is None
+    assert result.allocated_vm_ext_ids == []
+
+
+@pytest.mark.parametrize(
+    "gpu_type",
+    [
+        cm.GpuType.PASSTHROUGH_COMPUTE,
+        cm.GpuType.PASSTHROUGH_GRAPHICS,
+        cm.GpuType.VIRTUAL,
+    ],
+)
+def test_gpu_profile_metadata_stringifies_every_gpu_type(gpu_type):
+    profile = make_physical_gpu_profile(gpu_type=gpu_type)
+
+    result = GpuProfileMetadata.from_nutanix_physical_gpu_profile(profile)
+
+    assert result.gpu_type == str(gpu_type)
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [cm.GpuMode.UNUSED, cm.GpuMode.USED_FOR_PASSTHROUGH, cm.GpuMode.USED_FOR_VIRTUAL],
+)
+def test_gpu_profile_metadata_reads_gpu_type_from_type_never_from_mode(mode):
+    """Regression guard for the trap this model exists to avoid.
+
+    ``PhysicalGpuConfig.mode`` is allocation *state* (UNUSED /
+    USED_FOR_PASSTHROUGH / USED_FOR_VIRTUAL). The field that maps onto
+    ``vmm.GpuMode`` is ``PhysicalGpuConfig.type``. Both are strings, so reading
+    the wrong one type-checks and only fails against a live cluster: pin it.
+    """
+    profile = make_physical_gpu_profile(
+        gpu_type=cm.GpuType.PASSTHROUGH_COMPUTE, mode=mode
+    )
+
+    result = GpuProfileMetadata.from_nutanix_physical_gpu_profile(profile)
+
+    assert result.gpu_type == "PASSTHROUGH_COMPUTE"
+    assert result.gpu_type != str(mode)

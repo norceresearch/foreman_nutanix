@@ -135,6 +135,48 @@ module ForemanNutanix
       []
     end
 
+    # Physical GPU profiles on this cluster, as options for the VM form's single
+    # GPU select.
+    #
+    # One select can only post one value, so the option id is a composite of the
+    # three things the shim's provision call needs:
+    # "<device_id>:<vendor_name>:<gpu_type>", e.g. "7864:NVIDIA:PASSTHROUGH_GRAPHICS".
+    # NutanixCompute#save splits it back apart.
+    #
+    # A profile ext_id is deliberately NOT the value: it pins the VM to one
+    # physical card, which fails the moment that card is busy. A device_id names
+    # a GPU model, so Nutanix schedules any free matching card.
+    def available_gpus
+      Rails.logger.info '=== NUTANIX: Fetching available GPU profiles from shim server ==='
+      cluster_ext_id = cluster
+      return [] unless cluster_ext_id
+
+      data = shim.get("/api/v1/clustermgmt/clusters/#{cluster_ext_id}/gpu-profiles").json
+
+      # Passthrough only, and only profiles whose composite round-trips. See
+      # ForemanNutanix::GpuProfile.usable? - an unusable profile offered here
+      # would provision a VM with no GPU and still report success.
+      filtered_data = data.select { |profile| GpuProfile.usable?(profile) }
+      Rails.logger.info "=== NUTANIX: GPU profiles - total: #{data.count}, usable: #{filtered_data.count} ==="
+
+      filtered_data.map do |profile|
+        OpenStruct.new({
+          id: GpuProfile.build(profile),
+          ext_id: profile['ext_id'],
+          name: GpuProfile.label(profile),
+          device_id: profile['device_id'],
+          device_name: profile['device_name'],
+          vendor_name: profile['vendor_name'],
+          gpu_type: profile['gpu_type'],
+          assignable: profile['assignable'],
+          is_in_use: profile['is_in_use'],
+        })
+      end
+    rescue StandardError => e
+      Rails.logger.error "=== NUTANIX: Error fetching GPU profiles: #{e.message} ==="
+      []
+    end
+
     # Cluster resource statistics (CPU, memory, storage usage)
     def cluster_resource_stats
       Rails.logger.info '=== NUTANIX: Fetching cluster resource stats from shim server ==='
@@ -411,6 +453,9 @@ module ForemanNutanix
     end
 
     private
+
+    # "NVIDIA Tesla T4 (2 assignable)". Every part is optional in the shim's
+    # payload, so degrade instead of rendering a blank option.
 
     def shim
       @shim ||= ShimClient.new(shim_server_url)

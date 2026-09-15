@@ -70,6 +70,24 @@ class ClusterMgmt:
         return [ClusterMetadata.from_nutanix_cluster(cluster) for cluster in clusters]
 
     @retry_on_timeout
+    def list_physical_gpu_profiles(
+        self, cluster_ext_id: str
+    ) -> list[GpuProfileMetadata]:
+        """Return the physical GPU profiles available on a cluster.
+
+        A profile describes a GPU *model* present on the cluster, not one
+        physical card: attaching by ``device_id`` lets Nutanix schedule any free
+        matching card.
+        """
+        profiles: list[cm.PhysicalGpuProfile] = paginate(
+            self.clusters_api.list_physical_gpu_profiles, clusterExtId=cluster_ext_id
+        )
+        return [
+            GpuProfileMetadata.from_nutanix_physical_gpu_profile(profile)
+            for profile in profiles
+        ]
+
+    @retry_on_timeout
     def get_cluster_stats(self, cluster_ext_id: str) -> ClusterResourceStats:
         """Get resource usage statistics for a specific cluster
 
@@ -179,6 +197,53 @@ class StorageContainerMetadata:
             is_compression_enabled=container.is_compression_enabled,
             is_encrypted=container.is_encrypted,
             is_marked_for_removal=container.is_marked_for_removal,
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class GpuProfileMetadata:
+    """
+    Metadata about a physical GPU profile available on a cluster.
+
+    Flattens the SDK's ``PhysicalGpuProfile`` and its nested
+    ``physical_gpu_config`` into one record, in the style of the other
+    ``*Metadata`` models here.
+
+    ``gpu_type`` comes from ``PhysicalGpuConfig.type`` - the field that maps
+    onto ``vmm.GpuMode`` when attaching a GPU. It is deliberately *not*
+    ``PhysicalGpuConfig.mode``, which is allocation state (UNUSED /
+    USED_FOR_PASSTHROUGH / USED_FOR_VIRTUAL) and means something else entirely.
+    The local name avoids shadowing the ``type`` builtin.
+    """
+
+    ext_id: str
+    device_id: None | int
+    device_name: None | str
+    vendor_name: None | str
+    gpu_type: None | str
+    assignable: None | int
+    is_in_use: None | bool
+    frame_buffer_size_bytes: None | int
+    numa_node: None | str
+    sbdf: None | str
+    allocated_vm_ext_ids: list[str]
+
+    @classmethod
+    def from_nutanix_physical_gpu_profile(cls, profile: cm.PhysicalGpuProfile) -> Self:
+        """Convert Nutanix SDK PhysicalGpuProfile to our response model"""
+        config: None | cm.PhysicalGpuConfig = profile.physical_gpu_config
+        return cls(
+            ext_id=cast(str, profile.ext_id),
+            device_id=config.device_id if config else None,
+            device_name=config.device_name if config else None,
+            vendor_name=config.vendor_name if config else None,
+            gpu_type=str(config.type) if config and config.type else None,
+            assignable=config.assignable if config else None,
+            is_in_use=config.is_in_use if config else None,
+            frame_buffer_size_bytes=config.frame_buffer_size_bytes if config else None,
+            numa_node=config.numa_node if config else None,
+            sbdf=config.sbdf if config else None,
+            allocated_vm_ext_ids=list(profile.allocated_vm_ext_ids or []),
         )
 
 

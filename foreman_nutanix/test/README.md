@@ -9,8 +9,9 @@ bundle exec rake test
 ```
 
 `test_helper.rb` requires only `lib/foreman_nutanix/shim_client.rb`, which is
-deliberately plain Ruby (net/http, json, uri). That is the whole reason the
-suite boots in milliseconds with nothing installed but minitest and rake.
+deliberately plain Ruby (net/http, json, uri), plus a five-line `Rails.logger`
+stub. That is the whole reason the suite boots in milliseconds with nothing
+installed but minitest and rake.
 
 ## What this covers
 
