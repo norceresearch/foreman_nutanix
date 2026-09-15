@@ -258,6 +258,18 @@ class VirtualMachineMgmt:
         else:
             boot_config = vmm.UefiBoot(is_secure_boot_enabled=request.secure_boot)
 
+        # GPU passthrough. VmProvisionRequest has already validated the triple
+        # and normalised vendor/mode to SDK values, so this is a plain mapping.
+        # A fresh Gpu per iteration: [gpu] * n aliases one object n times.
+        gpus = [
+            vmm.Gpu(
+                device_id=request.gpu_device_id,
+                vendor=request.gpu_vendor,
+                mode=request.gpu_mode,
+            )
+            for _ in range(request.gpu_count)
+        ]
+
         # Create VM specification
         vm_spec = vmm.AhvConfigVm(
             name=request.name,
@@ -269,6 +281,9 @@ class VirtualMachineMgmt:
             nics=[nic],
             disks=[disk],
             boot_config=boot_config,
+            # None, not [], when no GPU was asked for: keeps the request
+            # byte-identical to what it was before GPUs existed.
+            gpus=gpus or None,
         )
 
         # Create the VM - this returns a task reference, not the VM directly
@@ -596,6 +611,23 @@ def _disk_sizes_bytes_from_disks(disks: list[Disk]) -> list[int | None]:
     return sizes
 
 
+# The SDK exposes GpuVendor/GpuMode as plain string constants, so an
+# unrecognised value would sail straight through to the API. Map explicitly.
+_GPU_VENDORS: dict[str, str] = {
+    "AMD": vmm.GpuVendor.AMD,
+    "INTEL": vmm.GpuVendor.INTEL,
+    "NVIDIA": vmm.GpuVendor.NVIDIA,
+}
+
+# Passthrough only. vmm.GpuMode.VIRTUAL (vGPU) is deliberately absent: we have
+# no NVIDIA vGPU licence. Adding "VIRTUAL": vmm.GpuMode.VIRTUAL here is the
+# single change needed to allow it.
+_PASSTHROUGH_GPU_MODES: dict[str, str] = {
+    "PASSTHROUGH_COMPUTE": vmm.GpuMode.PASSTHROUGH_COMPUTE,
+    "PASSTHROUGH_GRAPHICS": vmm.GpuMode.PASSTHROUGH_GRAPHICS,
+}
+
+
 @dataclasses.dataclass
 class VmProvisionRequest:
     """
@@ -631,6 +663,56 @@ class VmProvisionRequest:
     description: str = ""
     boot_method: Literal["bios", "uefi"] = "uefi"
     secure_boot: bool = False
+    # GPU passthrough. All optional, so a plugin that knows nothing about GPUs
+    # sends exactly what it sends today. gpu_device_id names a GPU *model*, not
+    # one card, leaving Nutanix free to schedule any free matching card.
+    gpu_device_id: None | int = None
+    gpu_vendor: None | str = None
+    gpu_mode: None | str = None
+    gpu_count: int = 0
+
+    def __post_init__(self) -> None:
+        """Validate the GPU triple, and normalise vendor/mode to SDK values.
+
+        Rejecting here means a bad combination fails as a 422 on the request
+        rather than as an opaque error from the Nutanix API halfway through
+        provisioning.
+        """
+        if self.gpu_count < 0:
+            raise ValueError(f"gpu_count must be >= 0, got {self.gpu_count}")
+
+        if self.gpu_count == 0:
+            # No GPU requested: the other fields are not read at all.
+            return
+
+        if self.gpu_device_id is None:
+            raise ValueError("gpu_device_id is required when gpu_count > 0")
+        if self.gpu_device_id < 1:
+            # A malformed composite on the plugin side coerces to 0; fail here
+            # with a useful message instead of at the Nutanix API.
+            raise ValueError(f"gpu_device_id must be >= 1, got {self.gpu_device_id}")
+        if self.gpu_vendor is None:
+            raise ValueError("gpu_vendor is required when gpu_count > 0")
+        if self.gpu_mode is None:
+            raise ValueError("gpu_mode is required when gpu_count > 0")
+
+        vendor = _GPU_VENDORS.get(self.gpu_vendor.upper())
+        if vendor is None:
+            raise ValueError(
+                f"gpu_vendor {self.gpu_vendor!r} is not one of {sorted(_GPU_VENDORS)}"
+            )
+
+        mode = _PASSTHROUGH_GPU_MODES.get(self.gpu_mode.upper())
+        if mode is None:
+            raise ValueError(
+                f"gpu_mode {self.gpu_mode!r} is not one of "
+                f"{sorted(_PASSTHROUGH_GPU_MODES)}. Note that a GPU profile's "
+                "'mode' is allocation state, not an attach mode - the profile "
+                "field to send is its type."
+            )
+
+        self.gpu_vendor = vendor
+        self.gpu_mode = mode
 
 
 @dataclasses.dataclass(frozen=True)

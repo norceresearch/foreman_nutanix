@@ -7,7 +7,7 @@ module ForemanNutanix
       :storage_container_ext_id, :num_sockets, :num_cores_per_socket,
       :disk_size_bytes, :description, :network_id, :storage_container,
       :disk_size_gb, :mac_address, :vm_ip_addresses, :create_time,
-      :boot_method, :secure_boot, :gpus
+      :boot_method, :secure_boot, :gpus, :gpu, :gpu_count
 
     def initialize(cluster = nil, args = {})
       Rails.logger.info "=== NUTANIX: NutanixCompute::initialize cluster=#{cluster} args=#{args} ==="
@@ -50,6 +50,13 @@ module ForemanNutanix
       # carries no gpus field, so VMs built by ServersCollection#all never
       # receive one, and the index view calls #gpus.empty? on every row.
       @gpus = args[:gpus] || []
+
+      # GPU passthrough selection. `gpu` is the composite the form's single
+      # select carries: "<device_id>:<vendor_name>:<gpu_type>". Both stay nil
+      # when nothing was selected, which is what keeps #save's payload
+      # byte-identical to a GPU-less provision.
+      @gpu = args[:gpu]
+      @gpu_count = args[:gpu_count]
     end
 
     # Required by Foreman - indicates if VM exists
@@ -97,6 +104,10 @@ module ForemanNutanix
         secure_boot: @secure_boot,
         boot_method: @boot_method,
       }
+
+      # Adds nothing at all unless a GPU was actually selected, so a GPU-less
+      # provision posts exactly the request it always did.
+      provision_request.merge!(gpu_provision_fields)
 
       Rails.logger.info "=== NUTANIX: Provisioning VM with request: #{provision_request} ==="
 
@@ -378,6 +389,42 @@ module ForemanNutanix
     end
 
     private
+
+    # The form's GPU select carries a single composite value,
+    # "<device_id>:<vendor_name>:<gpu_type>" (e.g. "7864:NVIDIA:PASSTHROUGH_GRAPHICS"),
+    # because one select cannot post three fields. Split it back apart here.
+    #
+    # Returns {} unless all three parts are present: a half-parsed composite
+    # must contribute nothing rather than provision a VM against a partially
+    # specified GPU. {} is also the no-GPU-selected case, which is what keeps
+    # the provision request byte-identical to a pre-GPU one.
+    def gpu_provision_fields
+      # Nothing selected is the common case and means exactly that.
+      return {} if GpuProfile.blank?(@gpu)
+
+      # Selected but unparseable is different: the user asked for a GPU. Dropping
+      # it here would build a GPU-less VM and report the build as successful, so
+      # fail the way a missing network or storage container does.
+      parts = GpuProfile.parse(@gpu)
+      if parts.nil?
+        raise StandardError, "Malformed GPU selection #{@gpu.inspect}; expected " \
+                             "'<device_id>:<vendor>:<gpu_type>'"
+      end
+
+      device_id, vendor, mode = parts
+
+      # The count field is hidden until a GPU is picked, so it routinely arrives
+      # nil or empty; one GPU is what selecting a GPU means.
+      count = @gpu_count.to_i
+      count = 1 if count < 1
+
+      {
+        gpu_device_id: device_id.to_i,
+        gpu_vendor: vendor,
+        gpu_mode: mode,
+        gpu_count: count,
+      }
+    end
 
     # NutanixCompute holds no reference to the ComputeResource, so it builds its
     # own client off the shim server address in the environment.

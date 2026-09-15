@@ -66,6 +66,32 @@ compute_resource.available_storage_containers,
   max: 10_000,
 } %>
 
+<%# One select for three shim fields: the option value is the composite
+#    "<device_id>:<vendor_name>:<gpu_type>". NutanixCompute#save splits it.
+#    Passthrough only - available_gpus filters vGPU profiles out. %>
+<%= select_f f,
+:gpu,
+compute_resource.available_gpus,
+:id,
+:name,
+{ include_blank: _("No GPU"), selected: f.object.try(:gpu) },
+{
+  label: _("GPU"),
+  help_inline: _("Passthrough GPU to attach when the VM is created"),
+  id: "gpu-select",
+} %>
+
+<div id="gpu-options" class="hidden">
+  <%= counter_f f,
+  :gpu_count,
+  {
+    label: _("GPU Count"),
+    help_inline: _("How many of the selected GPU to attach"),
+    min: 1,
+    max: 8,
+  } %>
+</div>
+
 <%# `checked:` must reflect the saved value, else the box always renders
 #    checked and the compute profile's "off" never survives a page render.
 #    f.object is compute_resource.new_vm(vm_attrs); NutanixCompute has no :start
@@ -106,11 +132,20 @@ compute_resource.available_boot_methods,
 
 <script>
   var $bootMethod = $('#boot-method-select');
+  var $gpu = $('#gpu-select');
 
   function toggleUefiOptions() {
     $('#uefi-options').toggleClass('hidden', $bootMethod.val() !== 'uefi');
   }
 
+  // Same pattern as above: the count only means anything once a GPU is picked,
+  // and the blank "No GPU" option posts an empty value.
+  function toggleGpuOptions() {
+    $('#gpu-options').toggleClass('hidden', !$gpu.val());
+  }
+
   toggleUefiOptions();
+  toggleGpuOptions();
   $bootMethod.on('change', toggleUefiOptions);
+  $gpu.on('change', toggleGpuOptions);
 </script>
