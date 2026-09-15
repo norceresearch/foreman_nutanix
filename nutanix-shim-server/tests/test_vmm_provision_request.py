@@ -102,9 +102,7 @@ def test_negative_gpu_count_is_rejected():
         make_request(gpu_count=-1)
 
 
-@pytest.mark.parametrize(
-    "missing", ["gpu_device_id", "gpu_vendor", "gpu_mode"]
-)
+@pytest.mark.parametrize("missing", ["gpu_device_id", "gpu_vendor", "gpu_mode"])
 def test_requesting_gpus_without_the_full_triple_is_rejected(missing):
     kwargs = dict(
         gpu_device_id=7864,
